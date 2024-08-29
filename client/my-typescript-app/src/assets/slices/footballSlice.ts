@@ -1,42 +1,45 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { fetchCompetitions, fetchTeams, fetchPlayers } from '../actions/footballActions';
+import { fetchCompetitions, fetchCurrentSeason, fetchTeams, fetchPlayers } from '../actions/footballActions';
 
 interface Competition {
-  id: string;
+  id: number;
   name: string;
 }
 
 interface Team {
-  id: string;
+  id: number;
   name: string;
 }
 
-interface PlayerStats {
-  id: string;
+interface Player {
+  id: number;
   name: string;
-  duels_won: number;
-  fouls_committed: number;
-  saves: number; // Pour les gardiens
-  goals_conceded: number; // Pour les gardiens
-  shots_on_target: number;
-  shots_off_target: number;
   goals: number;
   assists: number;
-  chances_created: number;
+  duelsWon: number;
+  saves: number;
+  goalsConceded: number;
+  shotsOnTarget: number;
+  shotsOffTarget: number;
+  chancesCreated: number;
 }
 
 interface FootballState {
   competitions: Competition[];
+  currentSeason: any;
   teams: Team[];
-  players: Record<string, PlayerStats[]>; // Mapping des équipes aux joueurs
+  players: Player[];
+  selectedLeagueId: number | null;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: FootballState = {
   competitions: [],
+  currentSeason: null,
   teams: [],
-  players: {},
+  players: [],
+  selectedLeagueId: null,
   loading: false,
   error: null,
 };
@@ -44,7 +47,11 @@ const initialState: FootballState = {
 const footballSlice = createSlice({
   name: 'football',
   initialState,
-  reducers: {},
+  reducers: {
+    setSelectedLeagueId: (state, action: PayloadAction<number>) => {
+      state.selectedLeagueId = action.payload;
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchCompetitions.pending, (state) => {
@@ -59,12 +66,24 @@ const footballSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch competitions';
       })
+      .addCase(fetchCurrentSeason.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCurrentSeason.fulfilled, (state, action: PayloadAction<any>) => {
+        state.currentSeason = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchCurrentSeason.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch current season';
+      })
       .addCase(fetchTeams.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchTeams.fulfilled, (state, action: PayloadAction<{ leagueId: string, teams: Team[] }>) => {
-        state.teams = action.payload.teams;
+      .addCase(fetchTeams.fulfilled, (state, action: PayloadAction<Team[]>) => {
+        state.teams = action.payload;
         state.loading = false;
       })
       .addCase(fetchTeams.rejected, (state, action) => {
@@ -75,8 +94,8 @@ const footballSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchPlayers.fulfilled, (state, action: PayloadAction<{ teamId: string, players: PlayerStats[] }>) => {
-        state.players[action.payload.teamId] = action.payload.players;
+      .addCase(fetchPlayers.fulfilled, (state, action: PayloadAction<Player[]>) => {
+        state.players = action.payload;
         state.loading = false;
       })
       .addCase(fetchPlayers.rejected, (state, action) => {
@@ -86,4 +105,5 @@ const footballSlice = createSlice({
   },
 });
 
+export const { setSelectedLeagueId } = footballSlice.actions;
 export default footballSlice.reducer;

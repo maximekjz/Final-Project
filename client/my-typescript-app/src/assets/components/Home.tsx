@@ -30,11 +30,15 @@ const Home: React.FC = () => {
   return (
     <>
       <h2>Home</h2>
-      {users.map((item) => (
+
+      {/* {users.map((item) => (
         <div key={item.id}>
           {item.id} {item.email}
         </div>
-      ))}
+      ))} */}
+      {/* Button : join a new league */}
+      {/* My league  */}
+      {/* My rank */}
     </>
   );
 };

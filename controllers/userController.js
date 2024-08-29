@@ -8,11 +8,12 @@ module.exports = {
     const { username, password, email, first_name, last_name } = req.body;
 
     const user = { username, password, email, first_name, last_name };
-
+    
     try {
+      
       const userInfo = await userModel.createUser(user);
       res.status(201).json({
-        message: "User registered successfullt",
+        message: "User registered successfully",
         user: userInfo,
       });
     } catch (error) {
@@ -22,7 +23,7 @@ module.exports = {
           .status(200)
           .json({ message: "Email or Username already exist" });
       }
-      res.status(500).json({ error: "internal server error" });
+      res.status(500).json({ error: "internal server error1" });
     }
   },
   loginUser: async (req, res) => {
@@ -82,7 +83,7 @@ module.exports = {
       });
     } catch (error) {
       console.log(error);
-      res.status(500).json({ error: "internal server error" });
+      res.status(500).json({ error: "internal server error2" });
     }
   },
 
@@ -94,7 +95,7 @@ module.exports = {
       res.json(users);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ error: "internal server error" });
+      res.status(500).json({ error: "internal server error3" });
     }
   },
 };

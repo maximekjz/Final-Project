@@ -1,74 +1,91 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
-import { fetchCompetitions, fetchTeams, fetchPlayers } from '../actions/footballActions';
+import { fetchCompetitions, fetchCurrentSeason, fetchTeams, fetchPlayers } from '../actions/footballActions';
+import { setSelectedLeagueId } from '../slices/footballSlice';
+import { leagues } from '../constants/leagues'; 
 
 const Data: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
+  const { competitions, currentSeason, teams, players, selectedLeagueId, loading, error } = useSelector((state: RootState) => state.football);
 
-  const competitions = useSelector((state: RootState) => state.football.competitions);
-  const teams = useSelector((state: RootState) => state.football.teams);
-  const players = useSelector((state: RootState) => state.football.players);
-  const loading = useSelector((state: RootState) => state.football.loading);
-  const error = useSelector((state: RootState) => state.football.error);
-
-  // Exemple de sélection dynamique
-  const selectedLeagueId = 'some-selected-league-id'; // À remplacer par la valeur sélectionnée
-  const selectedTeamId = 'some-selected-team-id'; // À remplacer par la valeur sélectionnée
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     dispatch(fetchCompetitions());
+  }, [dispatch]);
 
-    if (selectedLeagueId) {
-      dispatch(fetchTeams(selectedLeagueId));
+  useEffect(() => {
+    if (selectedLeagueId !== null) {
+      dispatch(fetchCurrentSeason(selectedLeagueId));
     }
+  }, [dispatch, selectedLeagueId]);
 
-    if (selectedTeamId) {
-      dispatch(fetchPlayers(selectedTeamId));
+  useEffect(() => {
+    if (currentSeason?.id) {
+      dispatch(fetchTeams(currentSeason.id));
     }
-  }, [dispatch, selectedLeagueId, selectedTeamId]);
+  }, [dispatch, currentSeason]);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error}</p>;
+  useEffect(() => {
+    if (teams.length > 0 && currentSeason?.id) {
+      dispatch(fetchPlayers({ teamId: teams[0].id, seasonId: currentSeason.id }));
+    }
+  }, [dispatch, teams, currentSeason]);
+
+  const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const leagueId = parseInt(event.target.value, 10);
+    dispatch(setSelectedLeagueId(leagueId));
+  };
+
+  const filteredPlayers = players.filter(player =>
+    player.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <div>
-      <h1>Football Data</h1>
-
-      <section>
-        <h2>Competitions</h2>
-        <ul>
-          {competitions.map(comp => (
-            <li key={comp.id}>{comp.name}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <h2>Teams</h2>
-        <ul>
-          {teams.map(team => (
-            <li key={team.id}>{team.name}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <h2>Players</h2>
-        {Object.keys(players).map(teamId => (
-          <div key={teamId}>
-            <h3>Team: {teamId}</h3>
-            <ul>
-              {players[teamId].map(player => (
-                <li key={player.id}>
-                  {player.name} - Goals: {player.goals}, Assists: {player.assists}, 
-                  Chances Created: {player.chances_created}
-                </li>
-              ))}
-            </ul>
-          </div>
+      <h2>Select League</h2>
+      <select onChange={handleLeagueChange} value={selectedLeagueId || ''}>
+        <option value="">Select a league</option>
+        {leagues.map((league) => (
+          <option key={league.id} value={league.id}>
+            {league.name}
+          </option>
         ))}
-      </section>
+      </select>
+
+      <h2>Teams</h2>
+      <ul>
+        {teams.map((team) => (
+          <li key={team.id}>{team.name}</li>
+        ))}
+      </ul>
+
+      <h2>Players</h2>
+      <input
+        type="text"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search a player"
+      />
+      <ul>
+        {filteredPlayers.map((player) => (
+          <li key={player.id}>{player.name}</li>
+        ))}
+      </ul>
+      <ul>
+        {players.map((player) => (
+          <li key={player.id}>{player.name}</li>
+        ))}
+      </ul>
     </div>
   );
 };

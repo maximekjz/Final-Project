@@ -4,8 +4,7 @@ const bcrypt = require("bcrypt");
 module.exports = {
   createUser: async (userinfo) => {
     const { username, password, email, first_name, last_name } = userinfo;
-    const trx = await db.transaction();
-  
+    const trx = await db("authusers");
     try {
       console.log("User info:", userinfo);
   
@@ -14,10 +13,10 @@ module.exports = {
         console.log("Hashed password:", hashPassword);
       } catch (error) {
         console.error("Error hashing password:", error);
-        throw error; // Ou gérez l'erreur d'une autre manière
+        throw error; 
       }
   
-      const [user] = await trx("authusers").insert(
+      const [user] = await trx.insert(
         { email, password: hashPassword, username, first_name, last_name },
         ["email", "id"]
       );

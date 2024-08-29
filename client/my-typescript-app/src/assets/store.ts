@@ -5,6 +5,8 @@ import footballReducer from './slices/footballSlice';
 export const store = configureStore({
   reducer: {
     football: footballReducer,
+    // players: playerReducer,
+
   },
 });
 

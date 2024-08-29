@@ -1,0 +1,5 @@
+https://www.sportmonks.com/blogs/how-to-build-a-fantasy-game-with-sportmonks-football-api/
+
+
+
+https://api.sportmonks.com/v3/football/teams/seasons/21646?api_token=YOURTOKEN&include=players.player
