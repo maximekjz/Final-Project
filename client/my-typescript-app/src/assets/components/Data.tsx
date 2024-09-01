@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import axios from 'axios';
 import { AppDispatch, RootState } from '../store';
 import { fetchCompetitions, fetchTeams, fetchPlayers } from '../actions/footballActions';
 import { setSelectedLeagueId } from '../slices/footballSlice';
 import { leagues } from '../constants/leagues';
+import { Player } from '../../data/playersData';
 
 const Data: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -12,6 +14,8 @@ const Data: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [likedPlayers, setLikedPlayers] = useState<number[]>([]);
+
 
   useEffect(() => {
     dispatch(fetchCompetitions());
@@ -44,6 +48,40 @@ const Data: React.FC = () => {
     setSelectedPlayer(playerName);
   };
 
+  const toggleLike = async (player: Player) => {
+    const identifier: string = `${player.name}-${player.position}-${player.teamName}`;
+
+    if (likedPlayers.includes(identifier)) {
+      // Logique pour enlever un "like"
+      setLikedPlayers(likedPlayers.filter(like => like !== identifier));
+      try {
+        await axios.delete('http://localhost:3000/like', {
+          data: {
+            userId: Number(localStorage.getItem('id')), 
+            championshipId: selectedLeagueId,
+            playerName: player.name,
+            position: player.position
+          }
+        });
+      } catch (error) {
+        console.error('Error removing like:', error);
+      }
+    } else {
+      // Logique pour ajouter un "like"
+      setLikedPlayers([...likedPlayers, identifier]);
+      try {
+        await axios.post('http://localhost:3000/like', {
+          userId: Number(localStorage.getItem('id')), 
+          championshipId: selectedLeagueId,
+          playerName: player.name,
+          position: player.position
+        });
+      } catch (error) {
+        console.error('Error adding like:', error);
+      }
+    }
+  };
+  
   const filteredPlayers = players.filter(player =>
     player.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -94,6 +132,12 @@ const Data: React.FC = () => {
           <li key={player.name}>
             {player.name}
             <button onClick={() => handlePlayerClick(player.name)}>Show last season stats</button>
+            <button
+              onClick={() => toggleLike(player.name, player.position, player.team_name)}
+              style={{ marginLeft: '10px', cursor: 'pointer' }}
+            >
+              {likedPlayers.includes(`${player.name}-${player.position}-${player.team_name}`) ? 'Unlike' : 'Like'}
+            </button>
           </li>
         ))}
       </ul>

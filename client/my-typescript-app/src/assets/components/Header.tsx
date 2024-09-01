@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Stack } from '@mui/material';
 
@@ -12,6 +13,9 @@ const Header: React.FC = () => {
       </Button>
       <Button component={Link} to="/league">
         League
+      </Button>
+      <Button component={Link} to="/team">
+        Team
       </Button>
       <Button component={Link} to="/data">
         Data

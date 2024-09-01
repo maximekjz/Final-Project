@@ -5,6 +5,7 @@ import userRouter from './routes/userRouter';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import likeRoutes from './routes/likeRouter'
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use(cors({
   credentials: true
 }));
 
+app.use('/like', likeRoutes)
 
 // League routes
 app.use('/api/leagues', leagueRoutes);

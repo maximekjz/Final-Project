@@ -9,6 +9,7 @@ import Dashboard from './assets/components/Dashboard';
 import Data from './assets/components/Data';
 import GameExplanation from './assets/components/GameExplanation';
 import LeagueManager from './assets/components/LeagueManager';
+import Team from './assets/components/Team';
 
 const App: React.FC = () => {
   return (
@@ -22,6 +23,7 @@ const App: React.FC = () => {
         <Route path="/league" element={<LeagueManager />} />
         <Route path="/data" element={<Data />} />
         <Route path="/game" element={<GameExplanation />} />
+        <Route path="/team" element={<Team />} />
       </Routes>
     </>
   );
