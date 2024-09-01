@@ -1,4 +1,40 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { teamsData } from '../../data/playersData';
+
+export const fetchCompetitions = createAsyncThunk(
+  'football/fetchCompetitions',
+  async () => {
+    // Simule la récupération des compétitions
+    const competitions = [
+      { id: 1, name: 'Premier League' },
+      { id: 2, name: 'La Liga' },
+      // Ajoutez ici d'autres compétitions si nécessaire
+    ];
+    return competitions;
+  }
+);
+
+export const fetchTeams = createAsyncThunk(
+  'football/fetchTeams',
+  async (leagueId: number) => {
+    // Simule la récupération des équipes pour une ligue donnée
+    return teamsData; // Retourne toutes les équipes
+  }
+);
+
+export const fetchPlayers = createAsyncThunk(
+  'football/fetchPlayers',
+  async (teamId: number) => {
+    // Récupère les joueurs pour l'équipe sélectionnée
+    const team = teamsData.find((team) => team.id === teamId);
+    return team ? team.players : [];
+  }
+);
+
+
+/**                  Code with API
+ * 
+ * import { createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_KEY = 'W3KKZPEHytA7Hujm2xepz39jwCMgpiJXtdse4uuNILoVcZ2n0HVNsnXMDAbN';
@@ -18,25 +54,13 @@ export const fetchCompetitions = createAsyncThunk(
   }
 );
 
-export const fetchCurrentSeason = createAsyncThunk(
-  'football/fetchCurrentSeason',
-  async (leagueId: number) => {
-    try {
-      const response = await axios.get(`/api/v3/football/leagues/${leagueId}?api_token=${API_KEY}&include=currentSeason`);
-      console.log('API Response:', response);
-      return response.data.data.currentSeason;
-    } catch (error) {
-      console.error('Error fetching current season:', error);
-      throw error;
-    }
-  }
-);
+
 
 export const fetchTeams = createAsyncThunk(
   'football/fetchTeams',
-  async (seasonId: number) => {
+  async (leagueId: number) => {
     try {
-      const response = await axios.get(`/api/v3/football/seasons/${seasonId}/teams`, {
+      const response = await axios.get(`/api/v3/football/leagues/${leagueId}/teams`, {
         params: { api_token: API_KEY },
       });
       return response.data.data;
@@ -62,3 +86,4 @@ export const fetchPlayers = createAsyncThunk(
     }
   }
 );
+*/

@@ -1,4 +1,7 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+/** API
+ * 
+ * 
+ * import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const API_KEY = 'W3KKZPEHytA7Hujm2xepz39jwCMgpiJXtdse4uuNILoVcZ2n0HVNsnXMDAbN';
@@ -32,3 +35,4 @@ const playerSlice = createSlice({
 });
 
 export default playerSlice.reducer;
+*/

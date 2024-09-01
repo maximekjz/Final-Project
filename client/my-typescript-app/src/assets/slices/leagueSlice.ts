@@ -1,45 +1,115 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+// src/slices/leagueSlice.ts
 
-// Définition de l'interface pour l'état des ligues.
-// `leagues`: tableau de ligues existantes.
-// `currentLeague`: la ligue à laquelle l'utilisateur est actuellement inscrit.
-// `error`: message d'erreur en cas de problème.
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
+
+// Définition des types pour les données de ligue
+interface League {
+  id: number;
+  name: string;
+  championshipId: number;
+  maxTeams: number;
+  leagueCode: string;
+  createdBy: number;
+  numMatchdays: number;
+}
+
+// Définition des types pour l'état du slice
 interface LeagueState {
-    leagues: League[];
-    currentLeague: League | null;
-    error: string | null;
+  leagues: League[];          // Liste des ligues
+  leagueCode: string | null;  // Code de la ligue créée ou jointe
+  loading: boolean;           // État de chargement
+  error: string | null;       // Message d'erreur
+}
+
+// État initial du slice
+const initialState: LeagueState = {
+  leagues: [],
+  leagueCode: null,
+  loading: false,
+  error: null,
+};
+
+// Action asynchrone pour créer une nouvelle ligue
+export const createLeague = createAsyncThunk(
+  'league/createLeague',
+  async (leagueData: { name: string; championship: string; maxTeams: number; userId: number; numMatchdays: number }) => {
+    const response = await axios.post('/api/leagues', leagueData);
+    return response.data;  // Retour des données de la ligue créée
   }
-  
-  // État initial avec une liste vide de ligues et aucune ligue sélectionnée.
-  const initialState: LeagueState = {
-    leagues: [],
-    currentLeague: null,
-    error: null,
-  };
+);
 
+// Action asynchrone pour rejoindre une ligue existante
+export const joinLeague = createAsyncThunk(
+  'league/joinLeague',
+  async (data: { leagueCode: string; userId: number }) => {
+    const response = await axios.post('/api/leagues/join', data);
+    return response.data;  // Retour des données de la ligue rejointe
+  }
+);
 
-// Création d'un slice pour gérer les actions liées aux ligues.
-// `createLeagueSuccess`: Ajoute une nouvelle ligue à l'état.
-// `joinLeagueSuccess`: Définit la ligue actuelle lorsque l'utilisateur rejoint une ligue.
-// `setError`: Définit un message d'erreur en cas de problème.
+// Création du slice avec les reducers et les actions
 const leagueSlice = createSlice({
-    name: 'league',
-    initialState,
-    reducers: {
-      createLeagueSuccess(state, action: PayloadAction<League>) {
+  name: 'league',
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(createLeague.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createLeague.fulfilled, (state, action) => {
+        state.loading = false;
         state.leagues.push(action.payload);
-      },
-      joinLeagueSuccess(state, action: PayloadAction<League>) {
-        state.currentLeague = action.payload;
-      },
-      setError(state, action: PayloadAction<string>) {
-        state.error = action.payload;
-      },
-    },
-  });
-  
-// Exportation des actions pour les utiliser dans les composants ou les thunks.
-export const { createLeagueSuccess, joinLeagueSuccess, setError } = leagueSlice.actions;
-  
-// Exportation du reducer pour l'intégrer au store Redux.
+        state.leagueCode = action.payload.leagueCode;
+      })
+      .addCase(createLeague.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to create league';
+      })
+      .addCase(joinLeague.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(joinLeague.fulfilled, (state, action) => {
+        state.loading = false;
+        state.leagues.push(action.payload);
+      })
+      .addCase(joinLeague.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to join league';
+      });
+  },
+});
+
 export default leagueSlice.reducer;
+
+
+
+/** API
+
+const leagueSlice = createSlice({
+  name: 'league',
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchLeagues.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchLeagues.fulfilled, (state, action) => {
+        state.loading = false;
+        state.leagues = action.payload;
+      })
+      .addCase(fetchLeagues.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch leagues';
+      });
+  },
+});
+
+export default leagueSlice.reducer;
+
+ */

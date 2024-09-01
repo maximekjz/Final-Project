@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button } from '@mui/material';
 
@@ -17,7 +17,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
   const loginregister = async () => {
     try {
       if (title === 'Login') {
-        const response = await axios.post('http://localhost:5000/user/login', {
+        const response = await axios.post('http://localhost:3000/user/login', {
           email,
           password,
         }, {
@@ -30,7 +30,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
           navigate('/');
         }
       } else {
-        const response = await axios.post('http://localhost:5000/user/register', {
+        const response = await axios.post('http://localhost:3000/user/register', {
           email,
           password,
         }, {

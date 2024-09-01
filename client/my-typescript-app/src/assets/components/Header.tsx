@@ -10,6 +10,9 @@ const Header: React.FC = () => {
       <Button component={Link} to="/dash">
         Dashboard
       </Button>
+      <Button component={Link} to="/league">
+        League
+      </Button>
       <Button component={Link} to="/data">
         Data
       </Button>

@@ -1,6 +1,7 @@
 import { useEffect, useState, ReactNode } from "react";
 import axios from "axios";
 import LoginRegister from "./LoginRegister";
+import React from "react";
 
 interface AuthProps {
   children: ReactNode;
