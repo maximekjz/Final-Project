@@ -10,4 +10,5 @@ router.post("/login", loginUser);
 
 router.get("/all", verifyToken, getAllUsers);
 
+
 export default router;

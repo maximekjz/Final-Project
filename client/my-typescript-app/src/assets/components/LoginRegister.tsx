@@ -10,6 +10,9 @@ interface LoginRegisterProps {
 const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [username, setUsername] = useState<string>('');  
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>(''); 
   const [message, setMessage] = useState<string>('');
 
   const navigate = useNavigate();
@@ -28,11 +31,14 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
           setMessage(response.data.message);
           console.log(response.data);
           navigate('/');
-        }
+        };
       } else {
         const response = await axios.post('http://localhost:3000/user/register', {
           email,
           password,
+          username,
+          first_name: firstName,
+          last_name: lastName
         }, {
           withCredentials: true,
         });
@@ -45,7 +51,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
       }
     } catch (error: any) {
       console.log(error);
-      setMessage(error.response.data.message);
+      if (error.response && error.response.status === 409) {
+        setMessage(error.response.data.error);
+      } else {
+        setMessage("An error occurred. Please try again.");
+      }
     }
   };
 
@@ -70,6 +80,36 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
           variant="outlined"
           onChange={(e) => setPassword(e.target.value)}
         />
+        {title === 'Register' && (  // Afficher ces champs uniquement si le titre est 'Register'
+          <>
+            <TextField
+              sx={{ m: 1 }}
+              id="username"
+              type="text"
+              label="Enter your username"
+              variant="outlined"
+              onChange={(e) => setUsername(e.target.value)}
+            />
+
+            <TextField
+              sx={{ m: 1 }}
+              id="firstName"
+              type="text"
+              label="Enter your first name"
+              variant="outlined"
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+
+            <TextField
+              sx={{ m: 1 }}
+              id="lastName"
+              type="text"
+              label="Enter your last name"
+              variant="outlined"
+              onChange={(e) => setLastName(e.target.value)}
+            />
+          </>
+        )}
       </Box>
       <Button variant="contained" onClick={loginregister}>
         {title}

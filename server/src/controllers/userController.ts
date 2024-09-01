@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { config } from 'dotenv';
 import { createUser, getUserByEmail, updateRefreshToken, getAllUsers as getAllUsersFromModel } from '../models/userModel'; // Notez le renommage de l'importation pour éviter les conflits
 
-config(); // Charger les variables d'environnement
+config(); 
 
 interface User {
   username: string;
@@ -29,40 +29,51 @@ export const registerUser = async (req: Request, res: Response) => {
     console.error("Error in registerUser:", error);
 
     if (error instanceof Error) {
-      res.status(500).json({ error: "Internal server error" });
+      if (error.message.includes("duplicate key value")) {
+        const field = error.message.includes("username") ? "Username" : "Email";
+        res.status(409).json({ error: `${field} already exists` });
+      } else {
+        res.status(500).json({ error: "Internal server error" });
+      }
     } else {
       res.status(500).json({ error: "Internal server error" });
     }
   }
 };
 
-export const loginUser = async (req: Request, res: Response) => {
-  const { email, username, password } = req.body;
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+
+if (!ACCESS_TOKEN_SECRET) {
+  throw new Error("ACCESS_TOKEN_SECRET is not defined in the environment variables");
+}
+
+export const loginUser = async (req: Request, res: Response): Promise<void> => {
+  const { email, password } = req.body;
 
   try {
-    const user = await getUserByEmail(email, username);
+    const user = await getUserByEmail(email, '');
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "User not found" });
+      return;
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-      return res.status(401).json({ message: "Authentication failed" });
+      res.status(401).json({ message: "Authentication failed" });
+      return;
     }
-
-    const { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } = process.env;
 
     const accessToken = jwt.sign(
       { userid: user.id, email: user.email },
-      ACCESS_TOKEN_SECRET!,
+      ACCESS_TOKEN_SECRET, // Utilisation de la clé secrète chargée
       { expiresIn: "60s" }
     );
 
     const refreshToken = jwt.sign(
       { userid: user.id, email: user.email },
-      REFRESH_TOKEN_SECRET!,
+      process.env.REFRESH_TOKEN_SECRET as string, // On répète la même vérification pour le refresh token si besoin
       { expiresIn: "3d" }
     );
 
@@ -94,6 +105,7 @@ export const loginUser = async (req: Request, res: Response) => {
     }
   }
 };
+
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {

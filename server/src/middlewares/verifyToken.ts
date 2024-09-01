@@ -11,7 +11,13 @@ interface DecodedToken extends JwtPayload {
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 
-const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
+// Extend the Request interface to include decoded user information
+interface ExtendedRequest extends Request {
+  userid?: string; // Optional property to avoid potential errors
+  email?: string;
+}
+
+const verifyToken = (req: ExtendedRequest, res: Response, next: NextFunction): void => {
   const accessToken = req.cookies.token || req.headers['x-access-token'] as string;
 
   console.log('Access token:', accessToken);
@@ -26,9 +32,8 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
     }
 
     if (decoded) {
-      const { userid, email } = decoded;
-      req.userid = userid; // Assurez-vous d'étendre le type Request pour inclure ces propriétés
-      req.email = email;
+      req.userid = decoded.userid;
+      req.email = decoded.email;
     }
 
     next();

@@ -61,3 +61,23 @@ export const joinLeague = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error joining the league' });
   }
 };
+
+export const showLeagues = async (req: Request, res: Response) => {
+  const { user_id } = req.query;
+
+  try {
+    const leagues = await db('user_leagues')
+      .join('leagues', 'user_leagues.league_id', '=', 'leagues.id')
+      .where('user_leagues.user_id', user_id)
+      .select('leagues.id', 'leagues.name', 'leagues.max_teams', 'leagues.league_code', 'leagues.num_matchdays');
+
+    if (!leagues.length) {
+      return res.status(404).json({ message: 'No leagues found for this user' });
+    }
+
+    res.status(200).json(leagues);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching leagues' });
+  }
+};

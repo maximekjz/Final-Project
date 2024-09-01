@@ -23,6 +23,7 @@ app.use(cors({
   credentials: true
 }));
 
+
 // League routes
 app.use('/api/leagues', leagueRoutes);
 

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
 import { leagues as predefinedLeagues } from '../constants/leagues';
+// import { fetchLeagues } from '../actions/leagueActions';
 
 const LeagueManager: React.FC = () => {
   const [name, setName] = useState('');
@@ -8,7 +10,25 @@ const LeagueManager: React.FC = () => {
   const [maxTeams, setMaxTeams] = useState(10);
   const [numMatchdays, setNumMatchdays] = useState(20);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageJoin, setMessageJoin] = useState<string | null>(null);
+  const [leagueCode, setLeagueCode] = useState<string>('');
+  const [myleagues, setMyLeagues] = useState<any[]>([]); 
   const userId = Number(localStorage.getItem('id')) || 1; 
+
+  useEffect(() => {
+    const fetchMyLeagues = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/leagues/show', {
+          params: { user_id: userId },
+        });
+        setMyLeagues(response.data);
+      } catch (error) {
+        console.error('Error fetching my leagues:', error);
+      }
+    };
+
+    fetchMyLeagues();
+  }, [userId]);
 
   const handleCreateLeague = async () => {
     if (championship === '') {
@@ -31,6 +51,37 @@ const LeagueManager: React.FC = () => {
     }
   };
 
+  const handleJoinLeague = async () => {
+    if (leagueCode === '') {
+      setMessageJoin('Please enter the league code.');
+      return;
+    }
+    
+    try {
+      const response = await axios.post('http://localhost:3000/api/leagues/join', {
+        league_code: leagueCode,
+        user_id: userId,
+      });
+      setMessageJoin(`League joined successfully! League code: ${leagueCode}`);
+      // Refresh the leagues list after joining
+      const fetchMyLeagues = async () => {
+        try {
+          const response = await axios.get('http://localhost:3000/api/leagues/show', {
+            params: { user_id: userId },
+          });
+          setMyLeagues(response.data);
+        } catch (error) {
+          console.error('Error fetching my leagues:', error);
+        }
+      };
+
+      fetchMyLeagues();
+    } catch (error) {
+      console.error('Error, you did not join the league:', error);
+      setMessageJoin('Error, you did not join the league.');
+    }
+  };
+  
   return (
     <>
     <div>
@@ -62,9 +113,25 @@ const LeagueManager: React.FC = () => {
       <button onClick={handleCreateLeague}>Create the league</button>
       {message && <p>{message}</p>}
     </div>
+    <h2>Join a league</h2>
+      <input
+        type="text"
+        placeholder="League code"
+        value={leagueCode}
+        onChange={(e) => setLeagueCode(e.target.value)}
+      />
+      <button onClick={handleJoinLeague}>Join the league</button>
+      {messageJoin && <p>{messageJoin}</p>}
     <div>
       <h2>My Leagues</h2>
-        
+      <select value="" onChange={(e) => setChampionship(Number(e.target.value))}>
+        <option value="">Select a championship</option>
+        {myleagues.map((leagues) => (
+          <option key={leagues.id} value={leagues.id}>
+            {leagues.name}
+          </option>
+        ))}
+      </select>
     </div>
     </>
   );
