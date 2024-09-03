@@ -4,7 +4,7 @@ import axios from 'axios';
 import { AppDispatch, RootState } from '../store';
 import { fetchCompetitions, fetchTeams, fetchPlayers } from '../actions/footballActions';
 import { setSelectedLeagueId } from '../slices/footballSlice';
-import { Player, Team } from '../slices/footballSlice';
+import { Player, Team } from '../slices/footballSlice'; // Importer les types ici
 import { leagues } from '../constants/leagues';
 
 const Data: React.FC = () => {
