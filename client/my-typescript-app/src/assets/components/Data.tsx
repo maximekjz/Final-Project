@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { AppDispatch, RootState } from '../store';
-import { fetchCompetitions, fetchTeams, fetchPlayers } from '../actions/footballActions';
+import { fetchCompetitions, fetchTeams, fetchPlayers, addTeam, removeTeam, getTeams, addPlayerToTeam, removePlayerFromTeam } from '../actions/footballActions';
 import { setSelectedLeagueId } from '../slices/footballSlice';
 import { Player, Team } from '../slices/footballSlice';
 import { leagues } from '../constants/leagues';
@@ -54,6 +54,7 @@ const Data: React.FC = () => {
   };
 
   const toggleLike = async (player: Player) => {
+    const { id, name, position, teamName } = player;
     const identifier = `${player.name}-${player.position}-${player.teamName}`;
     console.log('Toggling like for:', identifier);
   
@@ -70,9 +71,9 @@ const Data: React.FC = () => {
           data: {
             user_id,
             championship_id: selectedLeagueId,
-            player_name: player.name,
-            position: player.position,
-            playerid: player.id // Assurez-vous que player.id est un nombre
+            player_name: name,
+            position: position,
+            playerid: id // Assurez-vous que player.id est un nombre
           }
         });
       } catch (error) {
@@ -85,9 +86,9 @@ const Data: React.FC = () => {
         await axios.post('http://localhost:3000/api/like', {
           user_id,
           championship_id: selectedLeagueId,
-          player_name: player.name,
-          position: player.position,
-          playerid: player.id
+          player_name: name,
+          position: position,
+          playerid: id
         }, {
           headers: {
             'Content-Type': 'application/json'
@@ -99,7 +100,26 @@ const Data: React.FC = () => {
     }
   };
   
-  
+  const addPlayer = async (playerId: number) => {
+    if (selectedTeamId !== null) {
+      try {
+        await dispatch(addPlayerToTeam({ teamId: selectedTeamId, playerId })).unwrap();
+      } catch (error) {
+        setLocalError('Error adding player to team');
+      }
+    }
+  };
+
+  const removePlayer = async (playerId: number) => {
+    if (selectedTeamId !== null) {
+      try {
+        await dispatch(removePlayerFromTeam({ teamId: selectedTeamId, playerId })).unwrap();
+      } catch (error) {
+        setLocalError('Error removing player from team');
+      }
+    }
+  };
+
 
   const filteredPlayers = players.filter(player =>
     player.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -110,7 +130,7 @@ const Data: React.FC = () => {
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div>Error: {error || localError}</div>;
   }
 
   const selectedPlayerData = players.find(player => player.id === selectedplayerid);
@@ -157,6 +177,8 @@ const Data: React.FC = () => {
           >
             {likedPlayers.includes(player.id) ? 'Unlike' : 'Like'}
           </button>
+          <button onClick={() => addPlayer(player.id)}>Add to Team</button>
+          <button onClick={() => removePlayer(player.id)} style={{ marginLeft: '10px' }}>Remove from Team</button>
         </li>
       ))}
       </ul>

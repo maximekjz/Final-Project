@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { fetchCompetitions, fetchTeams, fetchPlayers } from '../actions/footballActions';
+import { fetchCompetitions, fetchTeams, fetchPlayers, addTeam, removeTeam, getTeams, removePlayerFromTeam, addPlayerToTeam } from '../actions/footballActions';
 
 interface Competition {
   id: number;
@@ -7,10 +7,10 @@ interface Competition {
 }
 
 export interface Player {
-  id: number; // Ajout de l'ID
+  id: number;
   name: string;
   position: string;
-  teamName?: string; // Marqué comme optionnel pour les cas où il pourrait être absent
+  teamName?: string;
   previous_season_stats?: {
     appearances: number;
     goals: number;
@@ -36,14 +36,22 @@ export interface Player {
       shots_off_target?: number;
       chances_created?: number;
     };
-    // Ajouter d'autres matchs si nécessaire
   };
 }
 
 export interface Team {
   id: number;
   name: string;
-  players: Player[]; // Ajout de la propriété players
+  players: Player[];
+  user_id?: number;
+  championship_id?: number;
+  match_day?: number;
+  gk?: string;
+  def?: string;
+  mid?: string;
+  forward1?: string;
+  forward2?: string;
+  league_id?: number; 
 }
 
 interface FootballState {
@@ -53,6 +61,7 @@ interface FootballState {
   selectedLeagueId: number | null;
   loading: boolean;
   error: string | null;
+  selectedTeam: Team | null;
 }
 
 const initialState: FootballState = {
@@ -62,6 +71,7 @@ const initialState: FootballState = {
   selectedLeagueId: null,
   loading: false,
   error: null,
+  selectedTeam: null,
 };
 
 const footballSlice = createSlice({
@@ -70,6 +80,15 @@ const footballSlice = createSlice({
   reducers: {
     setSelectedLeagueId: (state, action: PayloadAction<number>) => {
       state.selectedLeagueId = action.payload;
+    },
+    clearSelectedLeagueId: (state) => {
+      state.selectedLeagueId = null;
+    },
+    selectTeam: (state, action: PayloadAction<Team>) => {
+      state.selectedTeam = action.payload;
+    },
+    clearSelectedTeam: (state) => {
+      state.selectedTeam = null;
     },
   },
   extraReducers: (builder) => {
@@ -95,10 +114,9 @@ const footballSlice = createSlice({
           ...team,
           players: team.players.map((player) => ({
             ...player,
-            teamName: team.name, // Ajouter le nom de l'équipe à chaque joueur
+            teamName: team.name,
           })),
         }));
-
         state.teams = teamsWithTeamName;
         state.loading = false;
       })
@@ -117,9 +135,30 @@ const footballSlice = createSlice({
       .addCase(fetchPlayers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch players';
+      })
+      .addCase(addTeam.fulfilled, (state, action: PayloadAction<Team>) => {
+        state.teams.push(action.payload);
+      })
+      .addCase(removeTeam.fulfilled, (state, action: PayloadAction<{ id: number }>) => {
+        state.teams = state.teams.filter(team => team.id !== action.payload.id);
+      })
+      .addCase(getTeams.fulfilled, (state, action: PayloadAction<Team[]>) => {
+        state.teams = action.payload;
+      })
+      .addCase(addPlayerToTeam.fulfilled, (state, action: PayloadAction<Team>) => {
+        const updatedTeam = action.payload;
+        state.teams = state.teams.map(team => 
+          team.id === updatedTeam.id ? updatedTeam : team
+        );
+      })
+      .addCase(removePlayerFromTeam.fulfilled, (state, action: PayloadAction<Team>) => {
+        const updatedTeam = action.payload;
+        state.teams = state.teams.map(team => 
+          team.id === updatedTeam.id ? updatedTeam : team
+        );
       });
   },
 });
 
-export const { setSelectedLeagueId } = footballSlice.actions;
+export const { setSelectedLeagueId, clearSelectedLeagueId, selectTeam, clearSelectedTeam } = footballSlice.actions;
 export default footballSlice.reducer;
