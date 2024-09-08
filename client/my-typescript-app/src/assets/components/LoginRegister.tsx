@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button } from '@mui/material';
+import {saveToLocalStorage} from '../../../storageUtil'
 
 interface LoginRegisterProps {
   title: string;
@@ -29,6 +30,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
 
         if (response.status === 200) {
           setMessage(response.data.message);
+
+          const { token, userId } = response.data;
+          saveToLocalStorage('token', token);
+          saveToLocalStorage('userId',userId); // Stock the userId
+
           console.log(response.data);
           navigate('/');
         };
@@ -59,6 +65,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
     }
   };
 
+  
   return (
     <>
       <h2>{title}</h2>

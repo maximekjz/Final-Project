@@ -13,8 +13,7 @@ const LeagueManager: React.FC = () => {
   const [messageJoin, setMessageJoin] = useState<string | null>(null);
   const [leagueCode, setLeagueCode] = useState<string>('');
   const [myleagues, setMyLeagues] = useState<any[]>([]); 
-  const userId = Number(localStorage.getItem('id')) || 1; 
-
+  const userId = localStorage.getItem('userId') || 1;
   useEffect(() => {
     const fetchMyLeagues = async () => {
       try {

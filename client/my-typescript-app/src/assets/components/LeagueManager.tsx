@@ -13,9 +13,11 @@ const LeagueManager: React.FC = () => {
   const [messageJoin, setMessageJoin] = useState<string | null>(null);
   const [leagueCode, setLeagueCode] = useState<string>('');
   const [myleagues, setMyLeagues] = useState<any[]>([]); 
-  const userId = Number(localStorage.getItem('id')) || 1; 
+  const userId = Number(localStorage.getItem('userId')); 
 
   useEffect(() => {
+    
+    
     const fetchMyLeagues = async () => {
       try {
         const response = await axios.get('http://localhost:3000/api/leagues/show', {
@@ -44,7 +46,18 @@ const LeagueManager: React.FC = () => {
         created_by: userId,
         num_matchdays: numMatchdays,
       });
-      setMessage(`League created successfully! League code: ${response.data.leagueCode}`);
+
+      const { leagueId, leagueCode } = response.data;
+
+      // setMessage(`League created successfully! League code: ${leagueCode}`);
+      
+      const res = await axios.post('http://localhost:3000/api/leagues/join', {
+        user_id: userId,
+        league_code: leagueCode,      
+      });
+      
+      setMessage(`League created and joined successfully! League code: ${leagueCode}`);
+
     } catch (error) {
       console.error('Error during the league creation:', error);
       setMessage('Error during the league creation.');

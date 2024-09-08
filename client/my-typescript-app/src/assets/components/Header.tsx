@@ -12,10 +12,10 @@ const Header: React.FC = () => {
         Dashboard
       </Button>
       <Button component={Link} to="/league">
-        League
+        My Leagues
       </Button>
       <Button component={Link} to="/team">
-        Team
+        My Team
       </Button>
       <Button component={Link} to="/data">
         Data

@@ -28,8 +28,12 @@ router.post('/create', async (req: Request, res: Response) => {
       created_by: createdBy,
       num_matchdays: numMatchdays,
     }).returning('id');
+    await knex('user_leagues').insert({
+      user_id: createdBy,
+      league_id: leagueCode,
+    });
 
-    res.json({ leagueCode }); // Retourner le code de la ligue
+    res.json({ leagueCode }); 
   } catch (error) {
     res.status(500).json({ error: 'Error creating league' });
   }
@@ -37,7 +41,7 @@ router.post('/create', async (req: Request, res: Response) => {
 
 router.post('/join', async (req: Request, res: Response) => {
   const { leagueCode, userId } = req.body;
-
+  
   try {
     const league = await knex('leagues').where({ league_code: leagueCode }).first();
 

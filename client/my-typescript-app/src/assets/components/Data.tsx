@@ -5,7 +5,7 @@ import { AppDispatch, RootState } from '../store';
 import { fetchCompetitions, fetchTeams, fetchPlayers, addTeam, removeTeam, getTeams, addPlayerToTeam, removePlayerFromTeam } from '../actions/footballActions';
 import { setSelectedLeagueId } from '../slices/footballSlice';
 import { Player, Team } from '../slices/footballSlice';
-import { leagues } from '../constants/leagues';
+import { leagues, teams as localTeams } from '../constants/leagues';
 
 const Data: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -13,9 +13,10 @@ const Data: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  const [selectedplayerid, setSelectedplayerid] = useState<number | null>(null);
-  const [likedPlayers, setLikedPlayers] = useState<(string | number)[]>([]); // Changed to number[]
-  const [localError, setLocalError] = useState<string | null>(null); // Added local error state
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [likedPlayers, setLikedPlayers] = useState<number[]>([]); // Changed to number[]
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchCompetitions());
@@ -34,7 +35,7 @@ const Data: React.FC = () => {
         .unwrap()
         .catch((error: any) => {
           console.error('Failed to fetch players:', error);
-          setLocalError(error.message); // Set local error state
+          setLocalError(error.message);
         });
     }
   }, [dispatch, selectedTeamId]);
@@ -49,77 +50,74 @@ const Data: React.FC = () => {
     setSelectedTeamId(teamId);
   };
 
-  const handlePlayerClick = (playerid: number) => {
-    setSelectedplayerid(playerid);
+  const handlePlayerClick = (playerId: number) => {
+    setSelectedPlayerId(playerId);
   };
 
   const toggleLike = async (player: Player) => {
-    const { id, name, position, teamName } = player;
-    const identifier = `${player.name}-${player.position}-${player.teamName}`;
-    console.log('Toggling like for:', identifier);
+    const { id } = player;
   
     const user_id = Number(localStorage.getItem('id'));
-    console.log('User ID:', user_id);
-    console.log('Selected League ID:', selectedLeagueId);
-    console.log('Player ID:', player.id);
   
-    if (likedPlayers.includes(identifier)) {
-      // Logic to remove like
-      setLikedPlayers(likedPlayers.filter(like => like !== identifier));
+    if (likedPlayers.includes(id)) {
+      setLikedPlayers(likedPlayers.filter(like => like !== id));
       try {
-        await axios.delete('http://localhost:3000/api/like', {
+        await axios.delete('http://localhost:3000/api/like/remove', {
           data: {
             user_id,
             championship_id: selectedLeagueId,
-            player_name: name,
-            position: position,
-            playerid: id // Assurez-vous que player.id est un nombre
+            player_id: id
           }
         });
+        setLocalError('Error unliking player');
+        console.log('Successfully removed like for player:', id);
       } catch (error) {
         console.error('Error removing like:', error);
       }
     } else {
-      // Logic to add like
-      setLikedPlayers([...likedPlayers, identifier]);
+      setLikedPlayers([...likedPlayers, id]);
       try {
-        await axios.post('http://localhost:3000/api/like', {
+        await axios.post('http://localhost:3000/api/like/add', {
           user_id,
           championship_id: selectedLeagueId,
-          player_name: name,
-          position: position,
-          playerid: id
+          player_id: id
         }, {
           headers: {
             'Content-Type': 'application/json'
           }
         });
+        console.log('Successfully added like for player:', id);
+        setLocalError('Error liking player');
+
       } catch (error) {
         console.error('Error adding like:', error);
       }
     }
   };
-  
+
   const addPlayer = async (playerId: number) => {
     if (selectedTeamId !== null) {
-      try {
-        await dispatch(addPlayerToTeam({ teamId: selectedTeamId, playerId })).unwrap();
-      } catch (error) {
-        setLocalError('Error adding player to team');
-      }
+        try {
+            await dispatch(addPlayerToTeam({ teamId: selectedTeamId, playerId })).unwrap();
+        } catch (error) {
+            setLocalError('Error adding player to team');
+        }
     }
-  };
+};
 
-  const removePlayer = async (playerId: number) => {
+const removePlayer = async (playerId: number) => {
     if (selectedTeamId !== null) {
-      try {
-        await dispatch(removePlayerFromTeam({ teamId: selectedTeamId, playerId })).unwrap();
-      } catch (error) {
-        setLocalError('Error removing player from team');
-      }
+        try {
+            await dispatch(removePlayerFromTeam({ teamId: selectedTeamId, playerId })).unwrap();
+        } catch (error) {
+            setLocalError('Error removing player from team');
+        }
     }
-  };
+};
 
+  const filteredTeams = selectedLeagueId
+  ? localTeams.filter(team => team.league === selectedLeagueId)
+  : [];
 
   const filteredPlayers = players.filter(player =>
     player.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -133,7 +131,7 @@ const Data: React.FC = () => {
     return <div>Error: {error || localError}</div>;
   }
 
-  const selectedPlayerData = players.find(player => player.id === selectedplayerid);
+  const selectedPlayerData = players.find(player => player.id === selectedPlayerId);
   const selectedPlayerStats = selectedPlayerData?.previous_season_stats;
   const isGoalkeeper = selectedPlayerData?.position === 'Goalkeeper';
 
@@ -152,7 +150,7 @@ const Data: React.FC = () => {
       <h2>Teams</h2>
       <select onChange={handleTeamChange} value={selectedTeamId || ''}>
         <option value="">Select a team</option>
-        {teams.map((team) => (
+        {filteredTeams.map((team) => (
           <option key={team.id} value={team.id}>
             {team.name}
           </option>

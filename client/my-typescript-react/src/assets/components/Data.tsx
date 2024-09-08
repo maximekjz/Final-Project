@@ -72,7 +72,7 @@ const Data: React.FC = () => {
             championship_id: selectedLeagueId,
             player_name: player.name,
             position: player.position,
-            playerid: player.id // Assurez-vous que player.id est un nombre
+            playerid: player.id 
           }
         });
       } catch (error) {

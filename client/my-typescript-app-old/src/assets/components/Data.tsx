@@ -66,7 +66,7 @@ const Data: React.FC = () => {
       // Logic to remove like
       setLikedPlayers(likedPlayers.filter(like => like !== identifier));
       try {
-        await axios.delete('http://localhost:3000/api/like', {
+        await axios.delete('http://localhost:3000/like', {
           data: {
             user_id,
             championship_id: selectedLeagueId,
@@ -82,7 +82,7 @@ const Data: React.FC = () => {
       // Logic to add like
       setLikedPlayers([...likedPlayers, identifier]);
       try {
-        await axios.post('http://localhost:3000/api/like', {
+        await axios.post('http://localhost:3000/like', {
           user_id,
           championship_id: selectedLeagueId,
           player_name: player.name,
