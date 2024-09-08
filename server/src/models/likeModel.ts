@@ -1,27 +1,28 @@
 import { db } from '../config/db';
+import { Request, Response } from 'express';
 
 const likeModel = {
-    addLike: async (user_id: number, championship_id: number, player_name: string, position: string, player_id : number) => {
+    addLike: async (user_id: number, championship_id: number, player_id : number) => {
         try {
             const existingLike = await db('fav_players')
-                .where({ user_id, championship_id, player_name, position, player_id })
+                .where({ user_id, championship_id, player_id })
                 .first();
 
             if (existingLike) {
                 return { message: 'Like already exists' };
             }
 
-            await db('fav_players').insert({ user_id, championship_id, player_name, position, player_id });
+            await db('fav_players').insert({ user_id, championship_id, player_id });
             return { message: 'Like added successfully' };
         } catch (error) {
             throw error;
         }
     },
 
-    removeLike: async (user_id: number, championship_id: number, player_name: string, position: string, player_id:number) => {
+    removeLike: async (user_id: number, championship_id: number, player_id:number) => {
         try {
             await db('fav_players')
-                .where({ user_id, championship_id, player_name, position, player_id })
+                .where({ user_id, championship_id, player_id })
                 .delete();
         } catch (error) {
             throw error;

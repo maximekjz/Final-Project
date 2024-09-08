@@ -6,11 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const likeController_1 = require("../controllers/likeController");
 const router = express_1.default.Router();
-router.post("/", (req, res) => {
+router.post("/api/like/add", (req, res) => {
     console.log('POST /api/like reached');
     // existing logic
     (0, likeController_1.addLike)(req, res);
 });
-router.get("/:user_id", likeController_1.getLikes);
-router.delete("/", likeController_1.removeLike);
+router.get("/api/like/:user_id", likeController_1.getLikes);
+router.delete("/api/like/remove", likeController_1.removeLike);
 exports.default = router;

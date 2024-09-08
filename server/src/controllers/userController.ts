@@ -68,7 +68,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     const accessToken = jwt.sign(
       { userid: user.id, email: user.email },
       ACCESS_TOKEN_SECRET, // Utilisation de la clé secrète chargée
-      { expiresIn: "60s" }
+      { expiresIn: "3d" }
     );
 
     const refreshToken = jwt.sign(
@@ -79,7 +79,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
 
     res.cookie("token", accessToken, {
       httpOnly: true,
-      maxAge: 60 * 1000, // 1 minute
+      maxAge: 60 * 60 * 1000 * 24 * 3, // 3 days
     });
 
     res.cookie("refreshtoken", refreshToken, {

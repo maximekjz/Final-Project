@@ -1,15 +1,15 @@
 import { db } from '../config/db';
 
-const isTeamValid = async (championship_id: number, players: string[]) => {
+const isTeamValid = async (championship_id: number, players: number[]) => {  
     const invalidPlayers = await db('players')
-        .whereIn('player_name', players)
-        .andWhere('championship_id', '<>', championship_id); // Correction : 'championship_id' ne devrait pas être '<>'
-    
-    return invalidPlayers.length === 0;
+        .whereIn('id', players)  
+        .andWhere('championship_id', championship_id);
+
+    return invalidPlayers.length === players.length;
 };
 
 const TeamModel = {
-    addTeam: async (user_id: number, championship_id: number, league_id: number, match_day: number, gk: string, def: string, mid: string, forward1: string, forward2: string) => {
+    addTeam: async (user_id: number, championship_id: number, league_id: string, match_day: number, gk: number, def: number, mid: number, forward1: number, forward2: number) => {
         const players = [gk, def, mid, forward1, forward2];
 
         if (!await isTeamValid(championship_id, players)) {
@@ -32,7 +32,7 @@ const TeamModel = {
         }
     },
 
-    removeTeam: async (user_id: number, championship_id: number, league_id: number, match_day: number) => {
+    removeTeam: async (user_id: number, championship_id: number, league_id: string, match_day: number) => {
         try {
             await db('my_team')
                 .where({ user_id, championship_id, league_id, match_day })

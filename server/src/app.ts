@@ -1,5 +1,6 @@
 import express from 'express';
 import axios from 'axios';
+import bodyParser from 'body-parser'
 import leagueRoutes from './routes/leagueRoutes'; // Adjusted path if necessary
 import userRouter from './routes/userRouter';
 import cookieParser from 'cookie-parser';
@@ -23,14 +24,15 @@ app.use(cors({
   origin: 'http://localhost:5173', // Ensure this matches your client port
   credentials: true
 }));
+app.use(bodyParser.json());
 
-app.use('/like', likeRoutes)
+app.use('/api', likeRoutes)
 
 // League routes
 app.use('/api/leagues', leagueRoutes);
 
 // User routes
-app.use("/user", userRouter);
+app.use('/user', userRouter);
 
 // Start the server
 app.listen(PORT, () => {

@@ -26,7 +26,11 @@ export const createLeague = async (req: Request, res: Response) => {
       created_by,
       num_matchdays,
     }).returning('id');
-
+    await db('user_leagues').insert({
+      user_id: created_by,
+      league_id: leagueCode,
+    });
+    console.log({ name, max_teams, created_by, num_matchdays }); 
     res.status(201).json({ message: 'League created successfully', leagueId, leagueCode });
   } catch (error) {
     console.error(error);

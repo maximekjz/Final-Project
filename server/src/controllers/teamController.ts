@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import TeamModel from '../models/TeamModel';
+import TeamModel from '../models/teamModel';
 
 export const addTeam = async (req: Request, res: Response) => {
     try {
