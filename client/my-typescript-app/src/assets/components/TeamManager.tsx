@@ -20,7 +20,7 @@ const TeamManager: React.FC = () => {
     
     const fetchMyTeams = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/teams/show', {
+        const response = await axios.get(`http://localhost:3000/api/teams/show/${userId}`, {
           params: { user_id: userId },
         });
         setMyTeams(response.data);

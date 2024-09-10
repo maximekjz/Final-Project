@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { leagues as predefinedLeagues } from '../constants/leagues';
 import { getFromLocalStorage, saveToLocalStorage } from '../../../storageUtil';
 import { RootState, AppDispatch } from '../store';
-// import { seeLeague } from '../slices/leagueSlice';
+import { seeLeague } from '../slices/leagueSlice';
 
 const LeagueManager: React.FC = () => {
   const [name, setName] = useState('');
@@ -19,25 +19,27 @@ const LeagueManager: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
 
 
-  // useEffect(() => {
-  //   const fetchMyLeagues = async () => {
-  //     try {
-  //       const action = await dispatch(seeLeague({ userId }));
-  //       console.log('Action payload:', action.payload); // Ajoutez ceci pour vérifier les données
-  //       const result = action.payload as any[];
-  
-  //       if (Array.isArray(result)) {
-  //         setMyLeagues(result);
-  //       } else {
-  //         console.error('Expected an array but got:', result);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching my leagues:', error);
-  //     }
-  //   };
-  
-  //   fetchMyLeagues();
-  // }, [userId, dispatch]);
+  useEffect(() => {
+    const fetchMyLeagues = async () => {
+      if (userId) {
+        try {
+          console.log('Fetching leagues for user:', userId);
+          const action = await dispatch(seeLeague(userId));
+          console.log('Action payload:', action.payload);
+          
+          if (action.payload && Array.isArray(action.payload)) {
+            setMyLeagues(action.payload);
+          } else {
+            console.error('Expected an array but got:', action.payload);
+          }
+        } catch (error) {
+          console.error('Error fetching my leagues:', error);
+        }
+      }
+    };
+
+    fetchMyLeagues();
+  }, [userId, dispatch]);
 
     
   const handleCreateLeague = async () => {
@@ -136,21 +138,21 @@ const LeagueManager: React.FC = () => {
       {messageJoin && <p>{messageJoin}</p>}
     <div>
       <h2>My Leagues</h2>
+      {myLeagues.length > 0 ? (
       <select value="" onChange={(e) => setChampionship(Number(e.target.value))}>
-        <option value="">Select a championship</option>
-        {myLeagues.length > 0 ? (
-          myLeagues.map((league) => (
-            <option key={league.id} value={league.id}>
-              {league.name}
-            </option>
-          ))
+        <option value="">Select a league</option>
+            {myLeagues.map((league) => (
+              <option key={league.id} value={league.id}>
+                {league.name}
+              </option>
+            ))}
+          </select>
         ) : (
-          <option value="">No leagues available</option>
+          <p>No leagues available</p>
         )}
-      </select>
-    </div>
+      </div>
     </>
   );
 };
-
+  
 export default LeagueManager;

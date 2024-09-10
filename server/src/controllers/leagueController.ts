@@ -1,6 +1,7 @@
 // controllers/leagueController.ts
 import { Request, Response } from 'express';
 import { db } from '../config/db';
+import knex from 'knex';
 
 function generateRandomCode(length = 6) {
   return Math.random().toString(36).substring(2, 2 + length).toUpperCase();
@@ -26,18 +27,19 @@ export const createLeague = async (req: Request, res: Response) => {
       created_by,
       num_matchdays,
     }).returning('id');
+
     await db('user_leagues').insert({
       user_id: created_by,
-      league_id: leagueCode,
+      league_id: leagueId, // Use leagueId instead of leagueCode
     });
-    console.log({ name, max_teams, created_by, num_matchdays }); 
+
+    console.log({ name, max_teams, created_by, num_matchdays, leagueId, leagueCode }); 
     res.status(201).json({ message: 'League created successfully', leagueId, leagueCode });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error creating the league' });
   }
 };
-
 export const joinLeague = async (req: Request, res: Response) => {
   const { user_id, league_code } = req.body;
 
@@ -67,21 +69,25 @@ export const joinLeague = async (req: Request, res: Response) => {
 };
 
 export const showLeagues = async (req: Request, res: Response) => {
-  const { user_id } = req.query;
+  console.log('showLeagues function called with userId:', req.params.userId);
+
+  const userId = parseInt(req.params.userId, 10);
+  
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
 
   try {
-    const leagues = await db('user_leagues')
-      .join('leagues', 'user_leagues.league_id', '=', 'leagues.id')
-      .where('user_leagues.user_id', user_id)
-      .select('leagues.id', 'leagues.name', 'leagues.max_teams', 'leagues.league_code', 'leagues.num_matchdays');
-
-    if (!leagues.length) {
-      return res.status(404).json({ message: 'No leagues found for this user' });
-    }
-
-    res.status(200).json(leagues);
+    const leagues = await db('leagues')
+      .join('user_leagues', 'leagues.id', '=', 'user_leagues.league_id')
+      .where('user_leagues.user_id', userId)
+      .select('leagues.id', 'leagues.name', 'leagues.league_code');
+    
+    console.log('Fetched leagues:', leagues);
+    
+    res.json(leagues);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error fetching leagues' });
+    console.error('Error fetching leagues:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };

@@ -1,7 +1,7 @@
 import knex, { Knex } from 'knex';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({path: '../.env'});
 
 const { PGHOST, PGDATABASE, PGUSER, PGPASSWORD } = process.env;
 

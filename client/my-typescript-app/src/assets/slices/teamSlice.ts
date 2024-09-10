@@ -91,6 +91,21 @@ export const joinLeague = createAsyncThunk(
   }
 );
 
+export const seeLeague = createAsyncThunk(
+    'leagues/seeLeague',
+    async (userId: number) => {
+      console.log('Fetching leagues for user:', userId);
+      try {
+        const response = await axios.get(`/api/leagues/show/${userId}`);
+        console.log('Response data:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Failed to fetch leagues:', error);
+        throw error;
+      }
+    }
+  );
+
 // Création du slice avec les reducers et les actions
 const leagueSlice = createSlice({
   name: 'league',
