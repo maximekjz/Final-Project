@@ -1,7 +1,9 @@
-export const getUserId = () => localStorage.getItem('userId');
-
-export const saveToLocalStorage = (key: string, value: string): void => {
+export const getFromLocalStorage = (key: string): string | null => {
+  return localStorage.getItem(key);
+};
+export const saveToLocalStorage = (key: any, value: any): void => {
     localStorage.setItem(key, value);
   };
 
 export const clearUserId = () => localStorage.removeItem('userId');
+

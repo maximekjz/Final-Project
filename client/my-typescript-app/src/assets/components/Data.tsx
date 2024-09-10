@@ -2,10 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { AppDispatch, RootState } from '../store';
-import { fetchCompetitions, fetchTeams, fetchPlayers, addTeam, removeTeam, getTeams, addPlayerToTeam, removePlayerFromTeam } from '../actions/footballActions';
+import { fetchCompetitions, fetchTeams, fetchPlayers, addTeam, removeTeam, addPlayerToTeam, removePlayerFromTeam, updateTeam } from '../actions/footballActions';
 import { setSelectedLeagueId } from '../slices/footballSlice';
 import { Player, Team } from '../slices/footballSlice';
 import { leagues, teams as localTeams } from '../constants/leagues';
+import { getFromLocalStorage } from '../../../storageUtil';
+import PlayerForm from './PlayerForm'; 
+
 
 const Data: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -14,9 +17,11 @@ const Data: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
-  const [likedPlayers, setLikedPlayers] = useState<number[]>([]); // Changed to number[]
   const [localError, setLocalError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const userId = Number(getFromLocalStorage('userId')); 
+
+
 
   useEffect(() => {
     dispatch(fetchCompetitions());
@@ -40,6 +45,7 @@ const Data: React.FC = () => {
     }
   }, [dispatch, selectedTeamId]);
 
+  
   const handleLeagueChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const leagueId = parseInt(event.target.value, 10);
     dispatch(setSelectedLeagueId(leagueId));
@@ -54,66 +60,6 @@ const Data: React.FC = () => {
     setSelectedPlayerId(playerId);
   };
 
-  const toggleLike = async (player: Player) => {
-    const { id } = player;
-  
-    const user_id = Number(localStorage.getItem('id'));
-  
-    if (likedPlayers.includes(id)) {
-      setLikedPlayers(likedPlayers.filter(like => like !== id));
-      try {
-        await axios.delete('http://localhost:3000/api/like/remove', {
-          data: {
-            user_id,
-            championship_id: selectedLeagueId,
-            player_id: id
-          }
-        });
-        setLocalError('Error unliking player');
-        console.log('Successfully removed like for player:', id);
-      } catch (error) {
-        console.error('Error removing like:', error);
-      }
-    } else {
-      setLikedPlayers([...likedPlayers, id]);
-      try {
-        await axios.post('http://localhost:3000/api/like/add', {
-          user_id,
-          championship_id: selectedLeagueId,
-          player_id: id
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('Successfully added like for player:', id);
-        setLocalError('Error liking player');
-
-      } catch (error) {
-        console.error('Error adding like:', error);
-      }
-    }
-  };
-
-  const addPlayer = async (playerId: number) => {
-    if (selectedTeamId !== null) {
-        try {
-            await dispatch(addPlayerToTeam({ teamId: selectedTeamId, playerId })).unwrap();
-        } catch (error) {
-            setLocalError('Error adding player to team');
-        }
-    }
-};
-
-const removePlayer = async (playerId: number) => {
-    if (selectedTeamId !== null) {
-        try {
-            await dispatch(removePlayerFromTeam({ teamId: selectedTeamId, playerId })).unwrap();
-        } catch (error) {
-            setLocalError('Error removing player from team');
-        }
-    }
-};
 
   const filteredTeams = selectedLeagueId
   ? localTeams.filter(team => team.league === selectedLeagueId)
@@ -169,19 +115,20 @@ const removePlayer = async (playerId: number) => {
         <li key={player.id}> {/* Assurez-vous que player.id est unique */}
           {player.name}
           <button onClick={() => handlePlayerClick(player.id)}>Show last season stats</button>
-          <button
+          {/* <button
             onClick={() => toggleLike(player)}
             style={{ marginLeft: '10px', cursor: 'pointer' }}
           >
             {likedPlayers.includes(player.id) ? 'Unlike' : 'Like'}
-          </button>
-          <button onClick={() => addPlayer(player.id)}>Add to Team</button>
-          <button onClick={() => removePlayer(player.id)} style={{ marginLeft: '10px' }}>Remove from Team</button>
+          </button> 
+          <button onClick={() => addPlayerToTeam(player.id)}>Add to Team</button>
+          <button onClick={() => removePlayerFromTeam(player.id)} style={{ marginLeft: '10px' }}>Remove from Team</button>*/}
         </li>
       ))}
       </ul>
 
       {localError && <div>Error: {localError}</div>} {/* Display local errors */}
+      <PlayerForm selectedTeamId={selectedTeamId} />
 
       {selectedPlayerStats && (
         <div>
@@ -212,3 +159,4 @@ const removePlayer = async (playerId: number) => {
 };
 
 export default Data;
+

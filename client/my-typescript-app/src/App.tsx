@@ -1,4 +1,3 @@
-// src/App.tsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import './App.css';
@@ -9,7 +8,8 @@ import Dashboard from './assets/components/Dashboard';
 import Data from './assets/components/Data';
 import GameExplanation from './assets/components/GameExplanation';
 import LeagueManager from './assets/components/LeagueManager';
-import Team from './assets/components/Team';
+import TeamForm from './assets/components/Teamform';
+import TeamManager from './assets/components/TeamManager';
 
 const App: React.FC = () => {
   return (
@@ -23,10 +23,11 @@ const App: React.FC = () => {
         <Route path="/league" element={<LeagueManager />} />
         <Route path="/data" element={<Data />} />
         <Route path="/game" element={<GameExplanation />} />
-        <Route path="/team" element={<Team />} />
+        <Route path="/team" element={<TeamManager />} />
       </Routes>
     </>
   );
 };
 
 export default App;
+

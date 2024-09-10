@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { leagues as predefinedLeagues } from '../constants/leagues';
-// import { fetchLeagues } from '../actions/leagueActions';
+import { getFromLocalStorage, saveToLocalStorage } from '../../../storageUtil';
+import { RootState, AppDispatch } from '../store';
+// import { seeLeague } from '../slices/leagueSlice';
 
 const LeagueManager: React.FC = () => {
   const [name, setName] = useState('');
@@ -12,26 +14,32 @@ const LeagueManager: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [messageJoin, setMessageJoin] = useState<string | null>(null);
   const [leagueCode, setLeagueCode] = useState<string>('');
-  const [myleagues, setMyLeagues] = useState<any[]>([]); 
-  const userId = Number(localStorage.getItem('userId')); 
+  const [myLeagues, setMyLeagues] = useState<any[]>([]); 
+  const userId = Number(getFromLocalStorage('userId')); 
+  const dispatch = useDispatch<AppDispatch>();
 
-  useEffect(() => {
+
+  // useEffect(() => {
+  //   const fetchMyLeagues = async () => {
+  //     try {
+  //       const action = await dispatch(seeLeague({ userId }));
+  //       console.log('Action payload:', action.payload); // Ajoutez ceci pour vérifier les données
+  //       const result = action.payload as any[];
+  
+  //       if (Array.isArray(result)) {
+  //         setMyLeagues(result);
+  //       } else {
+  //         console.error('Expected an array but got:', result);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching my leagues:', error);
+  //     }
+  //   };
+  
+  //   fetchMyLeagues();
+  // }, [userId, dispatch]);
+
     
-    
-    const fetchMyLeagues = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/api/leagues/show', {
-          params: { user_id: userId },
-        });
-        setMyLeagues(response.data);
-      } catch (error) {
-        console.error('Error fetching my leagues:', error);
-      }
-    };
-
-    fetchMyLeagues();
-  }, [userId]);
-
   const handleCreateLeague = async () => {
     if (championship === '') {
       setMessage('Please select a championship.');
@@ -77,23 +85,14 @@ const LeagueManager: React.FC = () => {
       });
       setMessageJoin(`League joined successfully! League code: ${leagueCode}`);
       // Refresh the leagues list after joining
-      const fetchMyLeagues = async () => {
-        try {
-          const response = await axios.get('http://localhost:3000/api/leagues/show', {
-            params: { user_id: userId },
-          });
-          setMyLeagues(response.data);
+      // const action = await dispatch(seeLeague({ userId }));
+      // const result = action.payload as any[];
+      // setMyLeagues(result);
         } catch (error) {
           console.error('Error fetching my leagues:', error);
         }
       };
 
-      fetchMyLeagues();
-    } catch (error) {
-      console.error('Error, you did not join the league:', error);
-      setMessageJoin('Error, you did not join the league.');
-    }
-  };
   
   return (
     <>
@@ -139,11 +138,15 @@ const LeagueManager: React.FC = () => {
       <h2>My Leagues</h2>
       <select value="" onChange={(e) => setChampionship(Number(e.target.value))}>
         <option value="">Select a championship</option>
-        {myleagues.map((leagues) => (
-          <option key={leagues.id} value={leagues.id}>
-            {leagues.name}
-          </option>
-        ))}
+        {myLeagues.length > 0 ? (
+          myLeagues.map((league) => (
+            <option key={league.id} value={league.id}>
+              {league.name}
+            </option>
+          ))
+        ) : (
+          <option value="">No leagues available</option>
+        )}
       </select>
     </div>
     </>

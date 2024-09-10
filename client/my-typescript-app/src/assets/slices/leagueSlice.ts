@@ -1,7 +1,6 @@
-// src/slices/leagueSlice.ts
-
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
+import fetch from 'node-fetch'
 
 // Définition des types pour les données de ligue
 interface League {
@@ -48,6 +47,49 @@ export const joinLeague = createAsyncThunk(
   }
 );
 
+// Action asynchrone pour voir les ligues rejointes
+// export const seeLeague = createAsyncThunk(
+//   'leagues/seeLeague',
+//   async ({ userId }: { userId: number }) => {
+//     console.log('user id:', userId);
+    
+//     try {
+//       console.log('before');
+//       const response = await axios.get(`/api/leagues/user/${userId}`);
+//       console.log('after')
+//       return response.data; // Assurez-vous que ceci est un tableau d'objets de ligues
+//     } catch (error) {
+//       console.error('Failed to fetch leagues:', error);
+//       throw error; // Propager l'erreur pour la gestion des erreurs
+//     }
+//   }
+// );
+// type SeeLeagueResponse = League[];
+
+// export const seeLeague = createAsyncThunk<SeeLeagueResponse, { userId: number }>(
+//   'leagues/seeLeague',
+//   async ({ userId }) => {
+//     try {
+//       const response = await fetch(`/api/leagues/user/${userId}`, {
+//         method: 'GET',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//       });
+
+//       if (!response.ok) {
+//         throw new Error(`Request failed with status ${response.status}`);
+//       }
+
+//       const data = await response.json();
+//       return data as SeeLeagueResponse;
+//     } catch (error) {
+//       console.error('Failed to fetch leagues:', error);
+//       throw error;
+//     }
+//   }
+// );
+
 // Création du slice avec les reducers et les actions
 const leagueSlice = createSlice({
   name: 'league',
@@ -79,8 +121,21 @@ const leagueSlice = createSlice({
       .addCase(joinLeague.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to join league';
-      });
+      })
+      // .addCase(seeLeague.pending, (state) => {
+      //   state.loading = true;
+      //   state.error = null;
+      // })
+      // .addCase(seeLeague.fulfilled, (state, action: PayloadAction<League[]>) => {
+      //   state.loading = false;
+      //   state.leagues = action.payload;
+      // })
+      // .addCase(seeLeague.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.error = action.error.message || 'Failed to fetch leagues';
+      // });
   },
 });
 
 export default leagueSlice.reducer;
+
