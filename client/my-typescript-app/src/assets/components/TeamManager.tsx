@@ -1,61 +1,78 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { leagues as predefinedLeagues } from '../constants/leagues';
-import { getFromLocalStorage, saveToLocalStorage } from '../../../storageUtil';
-// import { fetchLeagues } from '../actions/leagueActions';
+import { getFromLocalStorage } from '../../../storageUtil';
+import { RootState, AppDispatch } from '../store';
+import { createTeam, seeTeam } from '../slices/teamSlice';
 
 const TeamManager: React.FC = () => {
   const [name, setName] = useState('');
-  const [matchDay, seMatchday] = useState(20);
   const [message, setMessage] = useState<string | null>(null);
-  const [messageJoin, setMessageJoin] = useState<string | null>(null);
-  const [league_id, setLeague_id] = useState<string>('');
-  const [league, setLeague] = useState<string>('');
-  const [myteams, setMyTeams] = useState<any[]>([]); 
+  const [leagueId, setLeagueId] = useState<string>('');
+  const [leagues, setLeagues] = useState<any[]>([]);
   const userId = Number(getFromLocalStorage('userId')); 
+  const dispatch = useDispatch<AppDispatch>();
 
-  useEffect(() => {
+  const { teams } = useSelector((state: RootState) => state.team);
+
   
-    
-    const fetchMyTeams = async () => {
-      try {
-        const response = await axios.get(`http://localhost:3000/api/teams/show/${userId}`, {
-          params: { user_id: userId },
-        });
-        setMyTeams(response.data);
-      } catch (error) {
-        console.error('Error fetching my leagues:', error);
-      }
-    };
+  useEffect(() => {
+    fetchLeagues();
+    dispatch(seeTeam(userId));
+  }, [userId, dispatch]);
 
-    fetchMyTeams();
-  }, [userId]);
+  const fetchLeagues = async () => {
+    if (userId) {
+      try {
+        const url = `http://localhost:3000/api/leagues/show?userId=${userId}`;
+        console.log('Fetching leagues with URL:', url);
+        const response = await axios.get(url);
+        console.log('Received leagues data:', response.data);
+        setLeagues(response.data);
+      } catch (error) {
+        console.error('Error fetching leagues:', error);
+        // ... gestion des erreurs ...
+      }
+    }
+  };
+
+
 
   const handleCreateTeam = async () => {
-    if (league_id === '') {
-      setMessage('Please select a league_id.');
+    if (!leagueId) {
+      setMessage('Please select a league.');
       return;
     }
     
     try {
-      const response = await axios.post('http://localhost:3000/api/teams/create', {
+      const selectedLeague = leagues.find(league => league.id.toString() === leagueId);
+      if (!selectedLeague) {
+        setMessage('Invalid league selected.');
+        return;
+      }
+      const teamData = {
         name,
-        league_id: league_id,
-        created_by: userId,
-        matchDay: matchDay,
-      });
-
-    //   const { leagueId, league_id } = response.data;
-
-      setMessage(`Team created successfully!`);
-
+        league_id: leagueId,
+        user_id: userId,
+        championship_id: selectedLeague.championship_id,
+        gk: 0,
+        def: 0,
+        mid: 0,
+        forward1: 0,
+        forward2: 0
+      };
+      const resultAction = await dispatch(createTeam(teamData));
+      if (createTeam.fulfilled.match(resultAction)) {
+        setMessage(`Team ${name} created successfully!`);
+        dispatch(seeTeam(userId)); // Refresh the teams list
+      } else {
+        setMessage('Error during the team creation.');
+      }
     } catch (error) {
-      console.error('Error during the league creation:', error);
-      setMessage('Error during the league creation.');
+      console.error('Error during the team creation:', error);
+      setMessage('Error during the team creation.');
     }
   };
-
   
   return (
     <>
@@ -67,9 +84,9 @@ const TeamManager: React.FC = () => {
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <select value={league_id} onChange={(e) => setLeague_id((e.target.value))}>
+      <select value={leagueId} onChange={(e) => setLeagueId(e.target.value)}>
         <option value="">Select a league</option>
-        {predefinedLeagues.map((league) => (
+        {leagues.map((league) => (
           <option key={league.id} value={league.id}>
             {league.name}
           </option>
@@ -80,14 +97,18 @@ const TeamManager: React.FC = () => {
     </div>
     <div>
       <h2>My Teams</h2>
-      <select value="" onChange={(e) => setLeague((e.target.value))}>
-        <option value="">Select a championship</option>
-        {myteams.map((leagues) => (
-          <option key={leagues.id} value={leagues.id}>
-            {leagues.name}
-          </option>
-        ))}
-      </select>
+      {teams.length > 0 ? (
+        <select>
+          <option value="">Select a team</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <p>No teams found</p>
+      )}
     </div>
     </>
   );

@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import likeRoutes from './routes/likeRoutes'
+import teamRoutes from './routes/teamRoutes'
 
 dotenv.config();
 
@@ -35,6 +36,9 @@ app.use('/api', likeRoutes)
 
 // League routes
 app.use('/api/leagues', leagueRoutes);
+
+// League routes
+app.use('/api/teams', teamRoutes);
 
 // User routes
 app.use('/user', userRouter);

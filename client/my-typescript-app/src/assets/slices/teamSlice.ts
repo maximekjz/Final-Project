@@ -1,66 +1,23 @@
-// import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-// import axios from 'axios';
-// import { Player } from './footballSlice';
-
-// interface TeamState {
-//     details: {
-//         id: number;
-//         players: Player[];
-//     } | null;
-//     status: 'idle' | 'loading' | 'failed';
-// }
-
-// const initialState: TeamState = {
-//     details: null,
-//     status: 'idle',
-// };
-
-// // Thunk pour récupérer les détails de l'équipe
-// export const fetchTeamDetails = createAsyncThunk(
-//     'team/fetchTeamDetails',
-//     async (teamId: number) => {
-//         const response = await axios.get(`/api/teams/${teamId}`);
-//         return response.data;
-//     }
-// );
-
-// const teamSlice = createSlice({
-//     name: 'team',
-//     initialState,
-//     reducers: {},
-//     extraReducers: (builder) => {
-//         builder
-//             .addCase(fetchTeamDetails.pending, (state) => {
-//                 state.status = 'loading';
-//             })
-//             .addCase(fetchTeamDetails.fulfilled, (state, action) => {
-//                 state.status = 'idle';
-//                 state.details = action.payload;
-//             })
-//             .addCase(fetchTeamDetails.rejected, (state) => {
-//                 state.status = 'failed';
-//             });
-//     },
-// });
-
-// export default teamSlice.reducer;
-
-
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // Définition des types pour les données de ligue
-interface Team {
-  id: number;
+interface TeamData {
+  id?: number;
   name: string;
-  league_id: number;
-  matchDay: number
+  championship_id: number;
+  league_id: string;
+  gk?: number;
+  def?: number;
+  mid?: number;
+  forward1?: number;
+  forward2?: number;
+  user_id: number
 }
 
 // Définition des types pour l'état du slice
 interface TeamState {
-  teams: Team[];          // Liste des ligues
-  teamCode: string | null;  // Code de la ligue créée ou jointe
+  teams: TeamData[];          // Liste des ligues
   loading: boolean;           // État de chargement
   error: string | null;       // Message d'erreur
 }
@@ -68,47 +25,30 @@ interface TeamState {
 // État initial du slice
 const initialState: TeamState = {
   teams: [],
-  teamCode: null,
   loading: false,
   error: null,
 };
 
 // Action asynchrone pour créer une nouvelle ligue
 export const createTeam = createAsyncThunk(
-  'team/createTeam',
-  async (teamData: { name: string; league_id: number;  userId: number; matchDay: number  }) => {
-    const response = await axios.post('/api/teams', teamData);
-    return response.data;  // Retour des données de la ligue créée
+  'team/addTeam',
+  async (teamData: TeamData) => {
+    const response = await axios.post('http://localhost:3000/api/teams/create', teamData);
+    return response.data;
   }
 );
 
-// Action asynchrone pour rejoindre une ligue existante
-export const joinLeague = createAsyncThunk(
-  'league/joinLeague',
-  async (data: { leagueCode: string; userId: number }) => {
-    const response = await axios.post('/api/leagues/join', data);
-    return response.data;  // Retour des données de la ligue rejointe
+
+export const seeTeam = createAsyncThunk(
+  'team/seeTeam',
+  async (userId: number) => {
+    const response = await axios.get(`http://localhost:3000/api/teams/show/${userId}`);
+    return response.data;
   }
 );
 
-export const seeLeague = createAsyncThunk(
-    'leagues/seeLeague',
-    async (userId: number) => {
-      console.log('Fetching leagues for user:', userId);
-      try {
-        const response = await axios.get(`/api/leagues/show/${userId}`);
-        console.log('Response data:', response.data);
-        return response.data;
-      } catch (error) {
-        console.error('Failed to fetch leagues:', error);
-        throw error;
-      }
-    }
-  );
-
-// Création du slice avec les reducers et les actions
-const leagueSlice = createSlice({
-  name: 'league',
+const teamSlice = createSlice({
+  name: 'team',
   initialState,
   reducers: {},
   extraReducers: (builder) => {
@@ -117,28 +57,27 @@ const leagueSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(createTeam.fulfilled, (state, action) => {
+      .addCase(createTeam.fulfilled, (state, action: PayloadAction<TeamData>) => {
         state.loading = false;
         state.teams.push(action.payload);
       })
       .addCase(createTeam.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to create league';
+        state.error = action.error.message || 'Failed to create team';
       })
-      .addCase(joinLeague.pending, (state) => {
+      .addCase(seeTeam.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(joinLeague.fulfilled, (state, action) => {
+      .addCase(seeTeam.fulfilled, (state, action: PayloadAction<TeamData[]>) => {
         state.loading = false;
-        state.teams.push(action.payload);
+        state.teams = action.payload;
       })
-      .addCase(joinLeague.rejected, (state, action) => {
+      .addCase(seeTeam.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to join league';
+        state.error = action.error.message || 'Failed to fetch teams';
       });
-  },
+  }
 });
 
-export default leagueSlice.reducer;
-
+export default teamSlice.reducer;
