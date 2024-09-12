@@ -24,7 +24,7 @@ const TeamManager: React.FC = () => {
   const fetchLeagues = async () => {
     if (userId) {
       try {
-        const url = `http://localhost:3000/api/leagues/show?userId=${userId}`;
+        const url = `http://localhost:3000/api/teams/show/${userId}`;
         console.log('Fetching leagues with URL:', url);
         const response = await axios.get(url);
         console.log('Received leagues data:', response.data);
