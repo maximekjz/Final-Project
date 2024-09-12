@@ -6,9 +6,9 @@ import request from 'superagent';
 interface League {
   id: number;
   name: string;
-  championshipId: number;
+  championship_id: number;
   maxTeams: number;
-  leagueCode: string;
+  leagueCode: number;
   createdBy: number;
   numMatchdays: number;
 }
@@ -16,7 +16,7 @@ interface League {
 // Définition des types pour l'état du slice
 interface LeagueState {
   leagues: League[];          // Liste des ligues
-  leagueCode: string | null;  // Code de la ligue créée ou jointe
+  leagueCode: number | null;  // Code de la ligue créée ou jointe
   loading: boolean;           // État de chargement
   error: string | null;       // Message d'erreur
 }
@@ -41,7 +41,7 @@ export const createLeague = createAsyncThunk(
 // Action asynchrone pour rejoindre une ligue existante
 export const joinLeague = createAsyncThunk(
   'league/joinLeague',
-  async (data: { leagueCode: string; userId: number }) => {
+  async (data: { leagueCode: number; userId: number }) => {
     const response = await axios.post('/api/leagues/join', data);
     return response.data;  // Retour des données de la ligue rejointe
   }
@@ -55,7 +55,7 @@ export const seeLeague = createAsyncThunk(
     
     try {
       console.log('before');
-      const response = await axios.get(`/api/leagues/show/${userId}`);
+      const response = await axios.get<League[]>(`/api/leagues/show/${userId}`);
       console.log('after')
       console.log('response:', response.data);
       return response.data;
@@ -118,9 +118,10 @@ const leagueSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(seeLeague.fulfilled, (state, action) => {
+      .addCase(seeLeague.fulfilled, (state, action: PayloadAction<League[]>) => {
         state.loading = false;
         state.leagues = action.payload;
+        state.error = null;
       })
       .addCase(seeLeague.rejected, (state, action) => {
         state.loading = false;

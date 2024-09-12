@@ -10,6 +10,6 @@ router.post('/create', createLeague);
 router.post('/join', joinLeague);
 
 // Print joined leagues
-router.get('/show/:userId', showLeagues);
+router.get('/show', showLeagues);
 
 export default router;

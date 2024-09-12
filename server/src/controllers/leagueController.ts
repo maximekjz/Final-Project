@@ -8,7 +8,7 @@ function generateRandomCode(length = 6) {
 }
 
 export const createLeague = async (req: Request, res: Response) => {
-  const { name, max_teams, created_by, num_matchdays } = req.body;
+  const { name, championship_id, max_teams, created_by, num_matchdays } = req.body;
 
   if (![5, 10].includes(max_teams)) {
     return res.status(400).json({ message: 'Invalid number of teams' });
@@ -22,22 +22,30 @@ export const createLeague = async (req: Request, res: Response) => {
   try {
     const [leagueId] = await db('leagues').insert({
       name,
+      championship_id, 
       max_teams,
       league_code: leagueCode,
       created_by,
       num_matchdays,
     }).returning('id');
 
+    const leagueIdNumber = typeof leagueId === 'object' ? leagueId.id : leagueId;
+
     await db('user_leagues').insert({
       user_id: created_by,
-      league_id: leagueId, // Use leagueId instead of leagueCode
+      league_id: leagueIdNumber, 
+      championship_id: championship_id
     });
 
-    console.log({ name, max_teams, created_by, num_matchdays, leagueId, leagueCode }); 
-    res.status(201).json({ message: 'League created successfully', leagueId, leagueCode });
+    console.log({ name, championship_id, max_teams, created_by, num_matchdays, leagueIdNumber, leagueCode }); 
+    res.status(201).json({ message: 'League created successfully', leagueIdNumber, leagueCode });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error creating the league' });
+    console.error('Error creating the league:', error);
+    if (error instanceof Error) {
+      res.status(500).json({ message: `Error creating the league: ${error.message}` });
+    } else {
+      res.status(500).json({ message: 'Unknown error occurred while creating the league' });
+    }
   }
 };
 export const joinLeague = async (req: Request, res: Response) => {
@@ -59,6 +67,7 @@ export const joinLeague = async (req: Request, res: Response) => {
     await db('user_leagues').insert({
       user_id,
       league_id: league.id,
+      championship_id: league.championship_id
     });
 
     res.status(200).json({ message: 'Successfully joined the league' });
@@ -68,23 +77,31 @@ export const joinLeague = async (req: Request, res: Response) => {
   }
 };
 
+
 export const showLeagues = async (req: Request, res: Response) => {
-  console.log('showLeagues function called with userId:', req.params.userId);
+  const userId = parseInt(req.query.userId as string, 10);
+  const championshipId = req.query.championshipId ? parseInt(req.query.championshipId as string, 10) : undefined;
 
-  const userId = parseInt(req.params.userId, 10);
-  
+  console.log('Parsed userId:', userId, 'championshipId:', championshipId);
+
   if (isNaN(userId)) {
-    return res.status(400).json({ error: 'Invalid user ID' });
+    return res.status(400).json({ error: 'Invalid userId' });
   }
-
+  
   try {
-    const leagues = await db('leagues')
+    let query = db('leagues')
       .join('user_leagues', 'leagues.id', '=', 'user_leagues.league_id')
       .where('user_leagues.user_id', userId)
-      .select('leagues.id', 'leagues.name', 'leagues.league_code');
+      .select('leagues.id', 'leagues.name', 'leagues.championship_id', 'leagues.league_code');
+
+    if (championshipId) {
+      query = query.where('user_leagues.championship_id', championshipId);
+    }
+
+    console.log('Executing query:', query.toString());
+    const leagues = await query;
     
     console.log('Fetched leagues:', leagues);
-    
     res.json(leagues);
   } catch (error) {
     console.error('Error fetching leagues:', error);
