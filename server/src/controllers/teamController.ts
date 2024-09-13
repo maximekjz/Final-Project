@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { db } from '../config/db';
-import TeamModel from '../models/teamModel';
 
 export const addTeam = async (req: Request, res: Response) => {
     const { name, championship_id, league_id, gk, def, mid, forward1, forward2, user_id } = req.body;

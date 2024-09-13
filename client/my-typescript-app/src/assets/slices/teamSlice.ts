@@ -6,8 +6,8 @@ export interface TeamData {
   id?: number;
   name: string;
   championship_id: number;
-  match_day: number,
   league_id: string;
+  match_day: number;
   gk?: number;
   def?: number;
   mid?: number;
@@ -29,6 +29,7 @@ const initialState: TeamState = {
   loading: false,
   error: null,
 };
+
 
 // Action asynchrone pour créer une nouvelle ligue
 export const createTeam = createAsyncThunk(

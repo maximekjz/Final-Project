@@ -24,6 +24,8 @@ const TeamManager: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [matchDay, setMatchDay] = useState<number>(1);
+  const [maxMatchdays, setMaxMatchdays] = useState<number>(38);
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [leagueId, setLeagueId] = useState<string>('');
   const [showPlayers, setShowPlayers] = useState<boolean>(false);
@@ -53,27 +55,18 @@ const TeamManager: React.FC = () => {
           const response = await axios.get(url);
           console.log('Received leagues data:', response.data);
           setLeagues(response.data);
+          setMaxMatchdays(response.data[0].num_matchdays);
         } catch (error) {
           console.error('Error fetching leagues:', error);
         }
       }
     };
 
-  const fetchAllPlayers = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/api/players');
-      setAllPlayers(response.data);
-    } catch (error) {
-      console.error('Error fetching all players:', error);
-    }
-  };
-
   const handleCreateTeam = async () => {
     if (!leagueId) {
       setMessage('Please select a league.');
       return;
     }
-    
     try {
       const selectedLeague = leagues.find(league => league.id.toString() === leagueId);
       if (!selectedLeague) {
@@ -85,7 +78,7 @@ const TeamManager: React.FC = () => {
         league_id: leagueId,
         user_id: userId,
         championship_id: selectedLeague.championship_id,
-        match_day: 0,
+        match_day: 1,
         gk: 0,
         def: 0,
         mid: 0,
@@ -109,12 +102,18 @@ const TeamManager: React.FC = () => {
     try {
       const response = await axios.get(`http://localhost:3000/api/teams/${teamId}`);
       setSelectedTeam(response.data);
+      setMatchDay(response.data.match_day)
+      const leagueResponse = await axios.get(`http://localhost:3000/api/leagues/${response.data.league_id}`);
+      setMaxMatchdays(leagueResponse.data.num_matchdays);
       console.log(response.data);
-      
     } catch (error) {
       console.error('Error fetching team details:', error);
       setMessage('Error fetching team details.');
     }
+  };
+
+  const handleMatchdayChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setMatchDay(Number(event.target.value));
   };
 
   const getPlayersByPosition = (positionCode: string) => {
@@ -250,6 +249,28 @@ const renderPlayersByPosition = (positionCode: string, positionName: string) => 
     }
   };
 
+  const handleUpdateTeam = async () => {
+    if (!selectedTeam) return;
+
+    const updatedTeam = {
+      ...selectedTeam,
+      match_day: matchDay
+    };
+
+    try {
+      const resultAction = await dispatch(updateTeam(updatedTeam));
+      if (updateTeam.fulfilled.match(resultAction)) {
+        setSelectedTeam(updatedTeam);
+        setMessage(`Team updated for matchday ${matchDay}`);
+      } else {
+        throw new Error('Failed to update team');
+      }
+    } catch (error) {
+      console.error('Error updating team:', error);
+      setMessage('Error updating team for matchday.');
+    }
+  };
+
   const handlePlayerClick = (playerId: number) => {
     setSelectedPlayerId(playerId);
   };
@@ -348,10 +369,17 @@ const renderPlayersByPosition = (positionCode: string, positionName: string) => 
       </div>
       {selectedTeam && (
       <div>
-        <h3>Selected Team: {selectedTeam.name}</h3>
-        <p>Championship: {selectedTeam.championship_id === 1 ? 'Premier League' : 'La Liga'}</p>
-        <p>Match Day: {selectedTeam.match_day}</p>
-        
+        <h3>Select match day</h3>
+        <select value={matchDay} onChange={handleMatchdayChange}>
+          {[...Array(20)].map((_, i) => (
+            <option key={i + 1} value={i + 1}>
+              Matchday {i + 1}
+            </option>
+          ))}
+        </select>
+        <button onClick={handleUpdateTeam}>Update Team for Matchday</button>
+        <h4>My Team for Matchday {matchDay}</h4>      
+          
         <h4>My Team</h4>
         <p>
           Goalkeeper: {allPlayers.find(p => p.id === selectedTeam.gk)?.name || 'Not selected'}
