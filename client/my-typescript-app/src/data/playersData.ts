@@ -8,7 +8,6 @@ export interface Player {
     name: string;           // Nom du joueur
     position: string;       // Poste du joueur (ex: 'Attaquant', 'Défenseur')
     teamName: string;       // Nom de l'équipe du joueur
-    // Ajoutez d'autres propriétés ici si nécessaire
     previous_season_stats?: {
       appearances: number;
       goals: number;

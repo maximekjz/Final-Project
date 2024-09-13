@@ -2,10 +2,11 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // Définition des types pour les données de ligue
-interface TeamData {
+export interface TeamData {
   id?: number;
   name: string;
   championship_id: number;
+  match_day: number,
   league_id: string;
   gk?: number;
   def?: number;
@@ -38,6 +39,23 @@ export const createTeam = createAsyncThunk(
   }
 );
 
+export const updateTeam = createAsyncThunk<TeamData, TeamData, { rejectValue: string }>(
+  'team/updateTeam',
+  async (teamData, { rejectWithValue }) => {
+    try {
+      console.log('Sending update request with data:', teamData);
+      const response = await axios.put(`http://localhost:3000/api/teams/${teamData.id}`, teamData);
+      console.log('Update response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error in updateTeam thunk:', error);
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(error.response?.data?.message || error.message);
+      }
+      return rejectWithValue('An unknown error occurred');
+    }
+  }
+);
 
 export const seeTeam = createAsyncThunk(
   'team/seeTeam',
@@ -53,6 +71,12 @@ const teamSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(updateTeam.fulfilled, (state, action) => {
+        const index = state.teams.findIndex(team => team.id === action.payload.id);
+        if (index !== -1) {
+          state.teams[index] = action.payload;
+        }
+      })
       .addCase(createTeam.pending, (state) => {
         state.loading = true;
         state.error = null;

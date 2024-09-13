@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { AppDispatch, RootState } from '../store';
-import { fetchCompetitions, fetchTeams, fetchPlayers, addTeam, removeTeam, addPlayerToTeam, removePlayerFromTeam, updateTeam } from '../actions/footballActions';
+import { fetchCompetitions, fetchTeams, fetchPlayers } from '../actions/footballActions';
 import { setSelectedLeagueId } from '../slices/footballSlice';
 import { Player, Team } from '../slices/footballSlice';
 import { leagues, teams as localTeams } from '../constants/leagues';
 import { getFromLocalStorage } from '../../../storageUtil';
-import PlayerForm from './PlayerForm'; 
 
 
 const Data: React.FC = () => {
@@ -127,8 +126,6 @@ const Data: React.FC = () => {
       ))}
       </ul>
 
-      {localError && <div>Error: {localError}</div>} {/* Display local errors */}
-      <PlayerForm selectedTeamId={selectedTeamId} />
 
       {selectedPlayerStats && (
         <div>

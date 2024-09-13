@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { fetchCompetitions, fetchTeams, fetchPlayers, addPlayerToTeam, removePlayerFromTeam, addTeam, removeTeam, updateTeam } from '../actions/footballActions';
+import { fetchCompetitions, fetchTeams, fetchPlayers } from '../actions/footballActions';
 
 interface Competition {
 id: number;
@@ -136,75 +136,6 @@ state.loading = false;
 state.loading = false;
 state.error = action.error.message || 'Failed to fetch players';
 })
-// Add player to team
-.addCase(addPlayerToTeam.pending, (state) => {
-  state.loading = true;
-  state.error = null;
-})
-.addCase(addPlayerToTeam.fulfilled, (state, action) => {
-  state.loading = false;
-  // Update state as needed after adding a player
-  // For example, you might need to update the player's team in your state
-})
-.addCase(addPlayerToTeam.rejected, (state, action) => {
-  state.loading = false;
-  state.error = action.error.message || 'Failed to add player to team';
-})
-// Remove player from team
-.addCase(removePlayerFromTeam.pending, (state) => {
-  state.loading = true;
-  state.error = null;
-})
-.addCase(removePlayerFromTeam.fulfilled, (state, action) => {
-  state.loading = false;
-  // Update state as needed after removing a player
-  // For example, you might need to update the player's team in your state
-})
-.addCase(removePlayerFromTeam.rejected, (state, action) => {
-  state.loading = false;
-  state.error = action.error.message || 'Failed to remove player from team';
-})
-// Add team
-.addCase(addTeam.pending, (state) => {
-  state.loading = true;
-  state.error = null;
-})
-.addCase(addTeam.fulfilled, (state, action) => {
-  state.loading = false;
-  state.teams.push(action.payload);
-})
-.addCase(addTeam.rejected, (state, action) => {
-  state.loading = false;
-  state.error = action.error.message || 'Failed to add team';
-})
-// Remove team
-.addCase(removeTeam.pending, (state) => {
-  state.loading = true;
-  state.error = null;
-})
-.addCase(removeTeam.fulfilled, (state, action) => {
-  state.loading = false;
-  state.teams = state.teams.filter(team => team.id !== action.payload);
-})
-.addCase(removeTeam.rejected, (state, action) => {
-  state.loading = false;
-  state.error = action.error.message || 'Failed to remove team';
-})
-// Update team
-.addCase(updateTeam.pending, (state) => {
-  state.loading = true;
-  state.error = null;
-})
-.addCase(updateTeam.fulfilled, (state, action) => {
-  state.loading = false;
-  state.teams = state.teams.map(team =>
-    team.id === action.payload.id ? action.payload : team
-  );
-})
-.addCase(updateTeam.rejected, (state, action) => {
-  state.loading = false;
-  state.error = action.error.message || 'Failed to update team';
-});
 },
 });
 export const { setSelectedLeagueId, clearSelectedLeagueId, selectTeam, clearSelectedTeam } = footballSlice.actions;

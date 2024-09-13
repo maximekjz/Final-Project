@@ -94,7 +94,7 @@ export const getTeamDetails = async (req: Request, res: Response) => {
     try {
         const team = await db('my_team')
             .where({ id: parsedTeamId })
-            .select('id', 'name', 'gk', 'def', 'mid', 'forward1', 'forward2', 'match_day')
+            .select('id', 'championship_id', 'name', 'gk', 'def', 'mid', 'forward1', 'forward2', 'match_day')
             .first();
 
         if (!team) {
@@ -110,3 +110,30 @@ export const getTeamDetails = async (req: Request, res: Response) => {
         });
     }
 };
+
+export const updateTeam = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const updateData = req.body;
+  
+    console.log('Received update request for team:', id);
+    console.log('Update data:', updateData);
+  
+    try {
+      const updatedTeam = await db('my_team')
+        .where({ id })
+        .update(updateData)
+        .returning('*');
+  
+      console.log('Updated team:', updatedTeam);
+  
+      if (updatedTeam.length === 0) {
+        console.log('Team not found');
+        return res.status(404).json({ message: 'Team not found' });
+      }
+  
+      res.json(updatedTeam[0]);
+    } catch (error) {
+      console.error('Error updating team:', error);
+      res.status(500).json({ message: 'Error updating team', error: (error as Error).message });
+    }
+  };

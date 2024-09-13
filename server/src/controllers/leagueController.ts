@@ -108,3 +108,33 @@ export const showLeagues = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+export const getLeaguePlayers = async (req: Request, res: Response) => {
+  const { leagueId } = req.params;
+
+  try {
+    const players = await db('players')
+      .where({ league_id: leagueId })
+      .select('*');
+
+    res.json(players);
+  } catch (error) {
+    console.error('Error fetching league players:', error);
+    res.status(500).json({ message: 'Error fetching league players' });
+  }
+};
+
+export const getUserLeagues = async (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  try {
+    const userLeagues = await db('leagues')
+      .join('user_leagues', 'leagues.id', '=', 'user_leagues.league_id')
+      .where('user_leagues.user_id', userId)
+      .select('leagues.id', 'leagues.name', 'leagues.championship_id');
+    
+    res.json(userLeagues);
+  } catch (error) {
+    console.error('Error fetching user leagues:', error);
+    res.status(500).json({ message: 'Error fetching user leagues' });
+  }
+};

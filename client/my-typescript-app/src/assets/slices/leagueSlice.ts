@@ -32,7 +32,7 @@ const initialState: LeagueState = {
 // Action asynchrone pour créer une nouvelle ligue
 export const createLeague = createAsyncThunk(
   'league/createLeague',
-  async (leagueData: { name: string; championship: string; maxTeams: number; userId: number; numMatchdays: number }) => {
+  async (leagueData: { name: string; championship: number; maxTeams: number; userId: number; numMatchdays: number }) => {
     const response = await axios.post('/api/leagues', leagueData);
     return response.data;  // Retour des données de la ligue créée
   }
