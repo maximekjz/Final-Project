@@ -1,31 +1,56 @@
 import { Request, Response } from 'express';
 import { db } from '../config/db';
 
-export const addTeam = async (req: Request, res: Response) => {
+export const addOrUpdateTeam = async (req: Request, res: Response) => {
     const { name, championship_id, league_id, gk, def, mid, forward1, forward2, user_id, match_day } = req.body;
     
     try {
-        const [teamId] = await db('my_team').insert({
-          name,
-          championship_id, 
-          league_id,
-          match_day,
-          gk,
-          def,
-          mid,
-          forward1,
-          forward2,
-          user_id
-        }).returning('id');
-    
-        const newTeam = await db('my_team').where({ id: teamId }).first();
-        console.log('Created new team:', newTeam);
-        res.status(201).json({ message: 'Team created successfully', newTeam });
-      } catch (error) {
-        console.error('Error creating the team:', error);
-        res.status(500).json({ message: 'Error creating the team', error: (error as Error).message });
-      }
+        // Check if a team already exists for this user, league, and matchday
+        const existingTeam = await db('my_team')
+            .where({ user_id, league_id, match_day })
+            .first();
+
+        if (existingTeam) {
+            // Update existing team
+            const updatedTeam = await db('my_team')
+                .where({ id: existingTeam.id })
+                .update({
+                    name,
+                    championship_id,
+                    gk,
+                    def,
+                    mid,
+                    forward1,
+                    forward2
+                })
+                .returning('*');
+
+            console.log('Updated team:', updatedTeam[0]);
+            res.status(200).json({ message: 'Team updated successfully', team: updatedTeam[0] });
+        } else {
+            // Create new team
+            const [newTeam] = await db('my_team').insert({
+                name,
+                championship_id, 
+                league_id,
+                match_day,
+                gk,
+                def,
+                mid,
+                forward1,
+                forward2,
+                user_id
+            }).returning('*');
+
+            console.log('Created new team:', newTeam);
+            res.status(201).json({ message: 'Team created successfully', team: newTeam });
+        }
+    } catch (error) {
+        console.error('Error adding or updating the team:', error);
+        res.status(500).json({ message: 'Error adding or updating the team', error: (error as Error).message });
+    }
 };
+
 
 export const removeTeam = async (req: Request, res: Response) => {
     const { user_id, championship_id, league_id, match_day } = req.body;

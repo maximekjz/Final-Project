@@ -1,9 +1,9 @@
 import express from 'express';
-import { addTeam, removeTeam, getTeams, getTeamDetails, updateTeam } from '../controllers/teamController';
+import { addOrUpdateTeam, removeTeam, getTeams, getTeamDetails, updateTeam } from '../controllers/teamController';
 
 const router = express.Router();
 
-router.post("/create", addTeam);
+router.post("/create", addOrUpdateTeam);
 router.delete("/remove", removeTeam);
 router.get("/show/:user_id", getTeams);
 router.get("/:teamId", getTeamDetails);  
