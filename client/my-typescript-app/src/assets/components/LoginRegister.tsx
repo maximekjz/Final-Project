@@ -31,10 +31,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
         if (response.status === 200) {
           setMessage(response.data.message);
 
-          const { token, userId } = response.data;
+          const { token, user } = response.data;
           saveToLocalStorage('token', token);
-          saveToLocalStorage('userId',userId); 
+          saveToLocalStorage('userId',user.id); 
           console.log('Token stocké:', token);
+          console.log('User ID stocké:', user.id);
 
           console.log(response.data);
           navigate('/');
