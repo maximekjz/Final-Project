@@ -2,13 +2,14 @@ import { Request, Response } from 'express';
 import { db } from '../config/db';
 
 export const addTeam = async (req: Request, res: Response) => {
-    const { name, championship_id, league_id, gk, def, mid, forward1, forward2, user_id } = req.body;
+    const { name, championship_id, league_id, gk, def, mid, forward1, forward2, user_id, match_day } = req.body;
     
     try {
         const [teamId] = await db('my_team').insert({
           name,
           championship_id, 
           league_id,
+          match_day,
           gk,
           def,
           mid,
@@ -17,8 +18,9 @@ export const addTeam = async (req: Request, res: Response) => {
           user_id
         }).returning('id');
     
-        console.log('Team created:', { id: teamId, name, championship_id, league_id, gk, def, mid, forward1, forward2, user_id }); 
-        res.status(201).json({ message: 'Team created successfully', id: teamId, name });
+        const newTeam = await db('my_team').where({ id: teamId }).first();
+        console.log('Created new team:', newTeam);
+        res.status(201).json({ message: 'Team created successfully', newTeam });
       } catch (error) {
         console.error('Error creating the team:', error);
         res.status(500).json({ message: 'Error creating the team', error: (error as Error).message });
