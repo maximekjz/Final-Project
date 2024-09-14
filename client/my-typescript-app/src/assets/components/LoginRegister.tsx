@@ -33,7 +33,8 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ title }) => {
 
           const { token, userId } = response.data;
           saveToLocalStorage('token', token);
-          saveToLocalStorage('userId',userId); // Stock the userId
+          saveToLocalStorage('userId',userId); 
+          console.log('Token stocké:', token);
 
           console.log(response.data);
           navigate('/');

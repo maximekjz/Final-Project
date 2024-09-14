@@ -64,7 +64,7 @@ export const getUsersById = async (id: string) => {
   }
 };
 
-export const updateRefreshToken = async (refresh: string, id: string) => {
+export const updateRefreshToken = async (refresh: string | null, id: string) => {
   try {
     const user = await db("authusers")
       .update({ token: refresh })

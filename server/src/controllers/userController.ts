@@ -121,3 +121,28 @@ export const getAllUsers = async (req: Request, res: Response) => {
     }
   }
 };
+
+
+export const logoutUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Récupérer l'ID de l'utilisateur depuis le token
+    const userId = (req as any).userid;
+
+    if (!userId) {
+      res.status(400).json({ message: "User ID not found" });
+      return;
+    }
+
+    // Invalider le refresh token en base de données
+    await updateRefreshToken(null, userId);
+
+    // Effacer les cookies
+    res.clearCookie('token');
+    res.clearCookie('refreshtoken');
+
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Error in logoutUser:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

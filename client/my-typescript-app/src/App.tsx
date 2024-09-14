@@ -4,12 +4,12 @@ import './App.css';
 import LoginRegister from './assets/components/LoginRegister';
 import Home from './assets/components/Home';
 import Header from './assets/components/Header' 
-import Dashboard from './assets/components/Dashboard';
 import Data from './assets/components/Data';
 import GameExplanation from './assets/components/GameExplanation';
 import LeagueManager from './assets/components/LeagueManager';
-import TeamForm from './assets/components/Teamform';
 import TeamManager from './assets/components/TeamManager';
+import Logout from './assets/components/Logout';
+import Auth from './assets/components/Auth';
 
 const App: React.FC = () => {
   return (
@@ -19,11 +19,11 @@ const App: React.FC = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<LoginRegister title="Login" />} />
         <Route path="/register" element={<LoginRegister title="Register" />} />
-        <Route path="/dash" element={<Dashboard />} />
-        <Route path="/league" element={<LeagueManager />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route path="/league" element={<Auth><LeagueManager /></Auth>}/>
         <Route path="/data" element={<Data />} />
         <Route path="/game" element={<GameExplanation />} />
-        <Route path="/team" element={<TeamManager />} />
+        <Route path="/team" element={<Auth><TeamManager /></Auth>} />
       </Routes>
     </>
   );

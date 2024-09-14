@@ -29,6 +29,9 @@ const Header: React.FC = () => {
       <Button component={Link} to="/register">
         Register
       </Button>
+      <Button component={Link} to="/logout">
+        Log out
+      </Button>
     </Stack>
   );
 };

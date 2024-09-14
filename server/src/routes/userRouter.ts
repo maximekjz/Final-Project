@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, getAllUsers } from '../controllers/userController';
+import { registerUser, loginUser, getAllUsers, logoutUser } from '../controllers/userController';
 import { verifyToken } from '../middlewares/verifyToken';
 
 const router = express.Router();
@@ -8,6 +8,12 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/all", verifyToken, getAllUsers);
+router.post("/logout", verifyToken, logoutUser);
+
+router.get("/auth", verifyToken, (req, res) => {
+    res.sendStatus(201)
+})
+
 
 
 export default router;
