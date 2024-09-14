@@ -31,25 +31,52 @@ const initialState: TeamState = {
 };
 
 
-// Action asynchrone pour créer une nouvelle ligue
-export const createTeam = createAsyncThunk(
-  'team/addTeam',
-  async (teamData: TeamData) => {
-    const response = await axios.post('http://localhost:3000/api/teams/create', teamData);
-    return response.data;
-  }
-);
+// export const createTeam = createAsyncThunk<TeamData, Omit<TeamData, 'id'>, { rejectValue: string }>(
+//   'team/createTeam',
+//   async (teamData, { rejectWithValue }) => {
+//     try {
+//       console.log('Creating team with data:', teamData); 
+//       const response = await axios.post('http://localhost:3000/api/teams/create', teamData);
+//       console.log('Create team response:', response.data);
+//       return response.data;
+//     } catch (error) {
+//       console.error('Error in createTeam thunk:', error);
+//       if (axios.isAxiosError(error)) {
+//         return rejectWithValue(error.response?.data?.message || error.message);
+//       }
+//       return rejectWithValue('An unknown error occurred');
+//     }
+//   }
+// );
 
-export const updateTeam = createAsyncThunk<TeamData, TeamData, { rejectValue: string }>(
-  'team/updateTeam',
+// export const updateTeam = createAsyncThunk<TeamData, TeamData, { rejectValue: string }>(
+//   'team/updateTeam',
+//   async (teamData, { rejectWithValue }) => {
+//     try {
+//       console.log('Sending update request with data:', teamData);
+//       const response = await axios.put(`http://localhost:3000/api/teams/${teamData.id}`, teamData);
+//       console.log('Update response:', response.data);
+//       return response.data;
+//     } catch (error) {
+//       console.error('Error in updateTeam thunk:', error);
+//       if (axios.isAxiosError(error)) {
+//         return rejectWithValue(error.response?.data?.message || error.message);
+//       }
+//       return rejectWithValue('An unknown error occurred');
+//     }
+//   }
+// );
+
+export const addOrUpdateTeam = createAsyncThunk<TeamData, Omit<TeamData, 'id'>, { rejectValue: string }>(
+  'team/addOrUpdateTeam',
   async (teamData, { rejectWithValue }) => {
     try {
-      console.log('Sending update request with data:', teamData);
-      const response = await axios.put(`http://localhost:3000/api/teams/${teamData.id}`, teamData);
-      console.log('Update response:', response.data);
-      return response.data;
+      console.log('Adding or updating team with data:', teamData); 
+      const response = await axios.post('http://localhost:3000/api/teams/create', teamData);
+      console.log('Add or update team response:', response.data);
+      return response.data.team;
     } catch (error) {
-      console.error('Error in updateTeam thunk:', error);
+      console.error('Error in addOrUpdateTeam thunk:', error);
       if (axios.isAxiosError(error)) {
         return rejectWithValue(error.response?.data?.message || error.message);
       }
@@ -72,24 +99,44 @@ const teamSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(updateTeam.fulfilled, (state, action) => {
-        const index = state.teams.findIndex(team => team.id === action.payload.id);
-        if (index !== -1) {
-          state.teams[index] = action.payload;
-        }
-      })
-      .addCase(createTeam.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(createTeam.fulfilled, (state, action: PayloadAction<TeamData>) => {
-        state.loading = false;
+    // .addCase(updateTeam.fulfilled, (state, action) => {
+    //   console.log('Updating team:', action.payload);
+    //   const index = state.teams.findIndex(team => team.id === action.payload.id);
+    //   if (index !== -1) {
+    //     state.teams[index] = action.payload;
+    //   }
+    // })
+    //   .addCase(createTeam.pending, (state) => {
+    //     state.loading = true;
+    //     state.error = null;
+    //   })
+    //   .addCase(createTeam.fulfilled, (state, action) => {
+    //     console.log('Creating new team:', action.payload);
+    //     state.teams.push(action.payload);
+    //   })
+    //   .addCase(createTeam.rejected, (state, action) => {
+    //     state.loading = false;
+    //     state.error = action.error.message || 'Failed to create team';
+    //   })
+    .addCase(addOrUpdateTeam.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    })
+    .addCase(addOrUpdateTeam.fulfilled, (state, action) => {
+      state.loading = false;
+      const index = state.teams.findIndex(team => team.id === action.payload.id);
+      if (index !== -1) {
+        // Update existing team
+        state.teams[index] = action.payload;
+      } else {
+        // Add new team
         state.teams.push(action.payload);
-      })
-      .addCase(createTeam.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to create team';
-      })
+      }
+    })
+    .addCase(addOrUpdateTeam.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.error.message || 'Failed to add or update team';
+    })
       .addCase(seeTeam.pending, (state) => {
         state.loading = true;
         state.error = null;

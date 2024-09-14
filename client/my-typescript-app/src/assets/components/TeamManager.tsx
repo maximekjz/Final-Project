@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { getFromLocalStorage } from '../../../storageUtil';
 import { RootState, AppDispatch } from '../store';
-import { createTeam, seeTeam, TeamData, updateTeam } from '../slices/teamSlice';
+import { addOrUpdateTeam, seeTeam, TeamData } from '../slices/teamSlice';
 import { Player } from '../slices/footballSlice';
 import playersData from '../../data/data_players.json';
 
@@ -50,61 +50,144 @@ const TeamManager: React.FC = () => {
     const fetchLeagues = async () => {
       if (userId) {
         try {
-          const url = `http://localhost:3000/api/leagues/user-leagues/${userId}`;
+          const url = `http://localhost:3000/api/leagues/show?userId=${userId}`;
           console.log('Fetching leagues with URL:', url);
           const response = await axios.get(url);
           console.log('Received leagues data:', response.data);
-          setLeagues(response.data);
-          setMaxMatchdays(response.data[0].num_matchdays);
+          if (Array.isArray(response.data) && response.data.length > 0) {
+            setLeagues(response.data.map(league => ({
+              ...league,
+              num_matchdays: league.num_matchdays || 38 // Assurez-vous que num_matchdays est toujours défini
+            })));
+            setLeagueId(response.data[0].id.toString());
+          } else {
+            console.log('No leagues found or invalid data format');
+            setLeagues([]);
+            setLeagueId('');
+          }
         } catch (error) {
           console.error('Error fetching leagues:', error);
+          setLeagues([]);
+          setLeagueId('');
         }
       }
     };
 
-  const handleCreateTeam = async () => {
+  const handleLeagueSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setLeagueId(event.target.value);
+  };
+
+  // const handleCreateTeam = async () => {
+  //   if (!leagueId) {
+  //     setMessage('Please select a league.');
+  //     return;
+  //   }
+  //   try {
+  //     const selectedLeague = leagues.find(league => league.id.toString() === leagueId);
+  //     if (!selectedLeague) {
+  //       setMessage('Invalid league selected.');
+  //       return;
+  //     }
+  //     const teamData = {
+  //       name,
+  //       league_id: leagueId,
+  //       user_id: userId,
+  //       championship_id: selectedLeague.championship_id,
+  //       match_day: 1,
+  //       gk: 0,
+  //       def: 0,
+  //       mid: 0,
+  //       forward1: 0,
+  //       forward2: 0
+  //     };
+  //     const resultAction = await dispatch(createTeam(teamData));
+  //     if (createTeam.fulfilled.match(resultAction)) {
+  //       setMessage(`Team ${name} created successfully!`);
+  //       dispatch(seeTeam(userId)); // Refresh the teams list
+  //     } else {
+  //       setMessage('Error during the team creation.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error during the team creation:', error);
+  //     setMessage('Error during the team creation.');
+  //   }
+  // };
+  
+  const handleTeamAction = async () => {
+
     if (!leagueId) {
-      setMessage('Please select a league.');
+      setMessage('Please select a league');
       return;
     }
+  
+    if (!name) {
+      setMessage('Please enter a team name');
+      return;
+    }
+  
+    const teamData= {
+      name: name, 
+      championship_id: leagues.find(league => league.id.toString() === leagueId).championship_id,
+      league_id: leagueId,
+      match_day: matchDay,
+      gk: selectedTeam?.gk || 0,
+      def: selectedTeam?.def || 0,
+      mid: selectedTeam?.mid || 0,
+      forward1: selectedTeam?.forward1 || 0,
+      forward2: selectedTeam?.forward2 || 0,
+      user_id: userId
+    };
+  
     try {
-      const selectedLeague = leagues.find(league => league.id.toString() === leagueId);
-      if (!selectedLeague) {
-        setMessage('Invalid league selected.');
-        return;
-      }
-      const teamData = {
-        name,
-        league_id: leagueId,
-        user_id: userId,
-        championship_id: selectedLeague.championship_id,
-        match_day: 1,
-        gk: 0,
-        def: 0,
-        mid: 0,
-        forward1: 0,
-        forward2: 0
-      };
-      const resultAction = await dispatch(createTeam(teamData));
-      if (createTeam.fulfilled.match(resultAction)) {
-        setMessage(`Team ${name} created successfully!`);
-        dispatch(seeTeam(userId)); // Refresh the teams list
+      const resultAction = await dispatch(addOrUpdateTeam(teamData));
+      
+      if (addOrUpdateTeam.fulfilled.match(resultAction)) {
+        setSelectedTeam(resultAction.payload);
+        setMessage(`Team ${resultAction.payload.id ? 'updated' : 'created'} for matchday ${matchDay}`);
+        // Refresh the teams list
+        dispatch(seeTeam(userId));
       } else {
-        setMessage('Error during the team creation.');
+        throw new Error(resultAction.error.message || 'Failed to add or update team');
       }
     } catch (error) {
-      console.error('Error during the team creation:', error);
-      setMessage('Error during the team creation.');
+      console.error('Error handling team action:', error);
+      setMessage(`Error ${selectedTeam ? 'updating' : 'creating'} team for matchday.`);
     }
   };
-  
+
+  // const handleTeamSelect = async (teamId: string) => {
+  //   try {
+  //     const response = await axios.get(`http://localhost:3000/api/teams/${teamId}`);
+  //     console.log('res:', response);
+  //     setSelectedTeam(response.data);
+  //     setMatchDay(response.data.match_day)
+  //     const leagueResponse = await axios.get(`http://localhost:3000/api/leagues/${response.data.league_id}`);
+  //     console.log('league res:', leagueResponse);
+      
+  //     setMaxMatchdays(leagueResponse.data.num_matchdays);
+  //     console.log(response.data);
+  //   } catch (error) {
+  //     console.error('Error fetching team details:', error);
+  //     setMessage('Error fetching team details.');
+  //   }
+  // };
+
   const handleTeamSelect = async (teamId: string) => {
     try {
       const response = await axios.get(`http://localhost:3000/api/teams/${teamId}`);
       setSelectedTeam(response.data);
-      setMatchDay(response.data.match_day)
-      const leagueResponse = await axios.get(`http://localhost:3000/api/leagues/${response.data.league_id}`);
-      setMaxMatchdays(leagueResponse.data.num_matchdays);
+      setMatchDay(response.data.match_day);
+  
+      // Trouver la ligue correspondante dans le state local
+      const selectedLeague = leagues.find(league => league.id === response.data.league_id);
+      
+      if (selectedLeague) {
+        setMaxMatchdays(selectedLeague.num_matchdays || 38); // Utilisez une valeur par défaut si num_matchdays n'est pas défini
+      } else {
+        console.warn(`League with id ${response.data.league_id} not found in local state`);
+        setMaxMatchdays(38); // Valeur par défaut
+      }
+  
       console.log(response.data);
     } catch (error) {
       console.error('Error fetching team details:', error);
@@ -127,6 +210,7 @@ const TeamManager: React.FC = () => {
         (positionCode === '04' && ['04', '05', '10', '11'].includes(idSuffix) && idPrefix===championshipId) ||
         (positionCode === '06' && ['06', '07', '12', '13', '14'].includes(idSuffix) && idPrefix===championshipId);
       return isCorrectPosition
+
     });
   };
 
@@ -194,16 +278,16 @@ const renderPlayersByPosition = (positionCode: string, positionName: string) => 
     }
 
     try {
-      console.log('Updating team with data:', updatedTeam);
-      const resultAction = await dispatch(updateTeam(updatedTeam));
-      if (updateTeam.fulfilled.match(resultAction)) {
-        setSelectedTeam(updatedTeam);
+      console.log('Adding player to team with data:', updatedTeam);
+      const resultAction = await dispatch(addOrUpdateTeam(updatedTeam));
+      if (addOrUpdateTeam.fulfilled.match(resultAction)) {
+        setSelectedTeam(resultAction.payload);
         setMessage(`Player added to the team successfully!`);
-      } else if (updateTeam.rejected.match(resultAction)) {
-        throw new Error(resultAction.error.message || 'Failed to update team');
+      } else if (addOrUpdateTeam.rejected.match(resultAction)) {
+        throw new Error(resultAction.error.message || 'Failed to add player to team');
       }
     } catch (error) {
-      console.error('Error updating team:', error);
+      console.error('Error adding player to team:', error);
       setMessage('Error adding player to the team.');
     }
   };
@@ -235,32 +319,32 @@ const renderPlayersByPosition = (positionCode: string, positionName: string) => 
     }
   
     try {
-      console.log('Updating team with data:', updatedTeam);
-      const resultAction = await dispatch(updateTeam(updatedTeam));
-      if (updateTeam.fulfilled.match(resultAction)) {
-        setSelectedTeam(updatedTeam);
+      console.log('Removing player from team with data:', updatedTeam);
+      const resultAction = await dispatch(addOrUpdateTeam(updatedTeam));
+      if (addOrUpdateTeam.fulfilled.match(resultAction)) {
+        setSelectedTeam(resultAction.payload);
         setMessage(`Player removed from the team successfully!`);
-      } else if (updateTeam.rejected.match(resultAction)) {
-        throw new Error(resultAction.error.message || 'Failed to update team');
+      } else if (addOrUpdateTeam.rejected.match(resultAction)) {
+        throw new Error(resultAction.error.message || 'Failed to remove player from team');
       }
     } catch (error) {
-      console.error('Error updating team:', error);
+      console.error('Error removing player from team:', error);
       setMessage('Error removing player from the team.');
     }
   };
-
+  
   const handleUpdateTeam = async () => {
     if (!selectedTeam) return;
-
+  
     const updatedTeam = {
       ...selectedTeam,
       match_day: matchDay
     };
-
+  
     try {
-      const resultAction = await dispatch(updateTeam(updatedTeam));
-      if (updateTeam.fulfilled.match(resultAction)) {
-        setSelectedTeam(updatedTeam);
+      const resultAction = await dispatch(addOrUpdateTeam(updatedTeam));
+      if (addOrUpdateTeam.fulfilled.match(resultAction)) {
+        setSelectedTeam(resultAction.payload);
         setMessage(`Team updated for matchday ${matchDay}`);
       } else {
         throw new Error('Failed to update team');
@@ -270,7 +354,6 @@ const renderPlayersByPosition = (positionCode: string, positionName: string) => 
       setMessage('Error updating team for matchday.');
     }
   };
-
   const handlePlayerClick = (playerId: number) => {
     setSelectedPlayerId(playerId);
   };
@@ -341,7 +424,7 @@ const renderPlayersByPosition = (positionCode: string, positionName: string) => 
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <select value={leagueId} onChange={(e) => setLeagueId(e.target.value)}>
+      <select value={leagueId} onChange={handleLeagueSelect}>
         <option value="">Select a league</option>
         {leagues.map((league) => (
           <option key={league.id} value={league.id}>
@@ -349,7 +432,7 @@ const renderPlayersByPosition = (positionCode: string, positionName: string) => 
           </option>
         ))}
       </select>
-      <button onClick={handleCreateTeam}>Create the team</button>
+      <button onClick={handleTeamAction}>Create the team</button>
       {message && <p>{message}</p>}
     </div>
     <div>
