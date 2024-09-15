@@ -114,14 +114,6 @@ const Data: React.FC = () => {
         <li key={player.id}> {/* Assurez-vous que player.id est unique */}
           {player.name}
           <button onClick={() => handlePlayerClick(player.id)}>Show last season stats</button>
-          {/* <button
-            onClick={() => toggleLike(player)}
-            style={{ marginLeft: '10px', cursor: 'pointer' }}
-          >
-            {likedPlayers.includes(player.id) ? 'Unlike' : 'Like'}
-          </button> 
-          <button onClick={() => addPlayerToTeam(player.id)}>Add to Team</button>
-          <button onClick={() => removePlayerFromTeam(player.id)} style={{ marginLeft: '10px' }}>Remove from Team</button>*/}
         </li>
       ))}
       </ul>

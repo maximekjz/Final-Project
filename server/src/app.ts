@@ -6,7 +6,6 @@ import userRouter from './routes/userRouter';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import likeRoutes from './routes/likeRoutes'
 import teamRoutes from './routes/teamRoutes'
 
 dotenv.config();
@@ -31,8 +30,6 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
-
-app.use('/api', likeRoutes)
 
 // League routes
 app.use('/api/leagues', leagueRoutes);
