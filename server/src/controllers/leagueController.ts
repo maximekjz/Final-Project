@@ -20,25 +20,67 @@ export const createLeague = async (req: Request, res: Response) => {
   const leagueCode = generateRandomCode();
 
   try {
-    const [leagueId] = await db('leagues').insert({
-      name,
-      championship_id, 
-      max_teams,
-      league_code: leagueCode,
-      created_by,
-      num_matchdays,
-    }).returning('id');
+    const result = await db.transaction(async trx => {
+      // Créer la ligue
+      const [leagueIdObj] = await trx('leagues').insert({
+        name,
+        championship_id, 
+        max_teams,
+        league_code: leagueCode,
+        created_by,
+        num_matchdays,
+      }).returning('id');
+    
+      const leagueId = leagueIdObj.id;
+    
+      // Créer une équipe pour l'utilisateur qui crée la ligue
+      const [teamIdObj] = await trx('my_team').insert({
+        name: `${name} - Team ${created_by}`,
+        user_id: created_by,
+        league_id: leagueId,
+        championship_id: championship_id,
+        match_day: 1,
+        gk: 0,
+        def: 0,
+        mid: 0,
+        forward1: 0,
+        forward2: 0,
+      }).returning('id');
+    
+      const teamId = teamIdObj.id;
 
-    const leagueIdNumber = typeof leagueId === 'object' ? leagueId.id : leagueId;
-
-    await db('user_leagues').insert({
-      user_id: created_by,
-      league_id: leagueIdNumber, 
-      championship_id: championship_id
+      await trx('user_leagues').insert({
+        user_id: created_by,
+        league_id: leagueId, 
+        championship_id: championship_id
+      });
+    
+      // Initialiser le classement général
+      await trx('league_overall_rankings').insert({
+        league_id: leagueId,
+        team_id: teamId,
+        rank: 1,
+        points: 0,
+        total_score: 0
+      });
+    
+      // Initialiser le classement pour chaque journée
+      for (let i = 1; i <= num_matchdays; i++) {
+        await trx('league_matchday_rankings').insert({
+          league_id: leagueId,
+          team_id: teamId,
+          match_day: i,
+          rank: 1,
+          points: 0,
+          score: 0
+        });
+      }
+    
+      return { leagueId, leagueCode };
     });
-
-    console.log({ name, championship_id, max_teams, created_by, num_matchdays, leagueIdNumber, leagueCode }); 
-    res.status(201).json({ message: 'League created successfully', leagueIdNumber, leagueCode });
+    
+    console.log({ name, championship_id, max_teams, created_by, num_matchdays, leagueId: result.leagueId, leagueCode: result.leagueCode }); 
+    res.status(201).json({ message: 'League created successfully', leagueId: result.leagueId, leagueCode: result.leagueCode });
   } catch (error) {
     console.error('Error creating the league:', error);
     if (error instanceof Error) {
@@ -47,7 +89,8 @@ export const createLeague = async (req: Request, res: Response) => {
       res.status(500).json({ message: 'Unknown error occurred while creating the league' });
     }
   }
-};
+}
+
 export const joinLeague = async (req: Request, res: Response) => {
   const { user_id, league_code } = req.body;
 
@@ -223,7 +266,4 @@ export const getLeague = async (req: Request, res: Response) => {
     console.error('Error fetching league:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
-};
-
-
-
+}

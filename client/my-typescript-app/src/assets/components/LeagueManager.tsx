@@ -105,6 +105,19 @@ const LeagueManager: React.FC = () => {
     }
   }, [dispatch, selectedLeagueId, selectedMatchDay]);
 
+  useEffect(() => {
+    if (leagues.length > 0) {
+      if (viewChampionship === '') {
+        setFilteredLeagues(leagues);
+      } else {
+        const filtered = leagues.filter(league => 
+          league.championship_id === Number(viewChampionship)
+        );
+        setFilteredLeagues(filtered);
+      }
+    }
+  }, [viewChampionship, leagues]);
+  
   const fetchLeagues = async () => {
     if (userId) {
       try {
@@ -201,17 +214,6 @@ const LeagueManager: React.FC = () => {
     console.log('Championship selected:', value);
     setViewChampionship(value === '' ? '' : Number(value));
   };
-  useEffect(() => {
-    if (viewChampionship === '') {
-      setFilteredLeagues(leagues);
-    } else {
-      const filtered = leagues.filter(league => 
-        league.championship_id === viewChampionship
-      );
-      setFilteredLeagues(filtered);
-    }
-  }, [viewChampionship, leagues]);
-
 
   const handleLeagueSelect = (leagueId: string) => {
     setSelectedLeagueId(leagueId);
