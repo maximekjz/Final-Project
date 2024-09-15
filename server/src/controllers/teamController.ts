@@ -2,8 +2,12 @@ import { Request, Response } from 'express';
 import { db } from '../config/db';
 
 export const addOrUpdateTeam = async (req: Request, res: Response) => {
+    console.log('Received request body:', req.body); 
     const { name, championship_id, league_id, gk, def, mid, forward1, forward2, user_id, match_day } = req.body;
-    
+    if (!user_id || !league_id || !match_day) {
+        console.log('Missing required fields:', { user_id, league_id, match_day });
+        return res.status(400).json({ message: 'user_id, league_id and match_day are required' });
+    }
     try {
         // Check if a team already exists for this user, league, and matchday
         const existingTeam = await db('my_team')

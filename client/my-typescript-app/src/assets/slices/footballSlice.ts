@@ -51,7 +51,7 @@ def?: string;
 mid?: string;
 forward1?: string;
 forward2?: string;
-league_id?: number;
+league_id?: string;
 }
 
 interface FootballState {

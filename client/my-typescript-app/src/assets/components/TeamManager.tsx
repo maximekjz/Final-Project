@@ -249,12 +249,18 @@ const renderPlayersByPosition = (positionCode: string, positionName: string) => 
 };
 
   const handleAddToTeam = async (playerId: number, positionCode: string) => {
+    
     if (!selectedTeam){
           setMessage('No team selected.');
     return}
 
-    let updatedTeam = { ...selectedTeam };
-    switch (positionCode) {
+    let updatedTeam = { 
+      ...selectedTeam,
+      user_id: userId, // Assurez-vous que userId est défini
+      league_id: leagueId, // Assurez-vous que leagueId est défini
+      match_day: matchDay // Assurez-vous que matchDay est défini
+    };
+     switch (positionCode) {
       case '01':
       case 'go' :
         updatedTeam.gk = playerId;
