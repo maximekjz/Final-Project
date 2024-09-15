@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
-import request from 'superagent';
 
 // Définition des types pour les données de ligue
 interface League {
@@ -19,6 +18,20 @@ interface LeagueState {
   leagueCode: number | null;  // Code de la ligue créée ou jointe
   loading: boolean;           // État de chargement
   error: string | null;       // Message d'erreur
+  ranking: LeagueRanking[],
+  currentLeague: string | null;
+}
+
+interface LeagueRanking {
+  id: number;
+  league_id: number;
+  team_id: number;
+  rank: number;
+  points: number;
+  score: number;
+  total_score: number;
+  team_name: string;
+  match_day?: number;
 }
 
 // État initial du slice
@@ -27,6 +40,8 @@ const initialState: LeagueState = {
   leagueCode: null,
   loading: false,
   error: null,
+  ranking: [],
+  currentLeague: null
 };
 
 // Action asynchrone pour créer une nouvelle ligue
@@ -65,30 +80,73 @@ export const seeLeague = createAsyncThunk(
     }
   }
 );
-// type SeeLeagueResponse = League[];
 
-// // Action asynchrone pour voir les ligues
-// export const seeLeague = createAsyncThunk<SeeLeagueResponse, { userId: number }>(
-//   'leagues/seeLeague',
-//   async ({ userId }) => {
-//     try {
-//       console.log('before');
-//       const response = await request.get(`/api/leagues/show/${userId}`);
-//       return response.body as SeeLeagueResponse;
-//     } catch (error) {
-//       console.error('Failed to fetch leagues:', error);
-//       throw error;
-//     }
-//   }
-// );
+export const fetchLeagueRanking = createAsyncThunk(
+  'league/fetchLeagueRanking',
+  async ({ leagueId, matchDay }: { leagueId: string, matchDay?: number }) => {
+    console.log(`Fetching ranking for league ${leagueId}, matchDay ${matchDay}`);
+    const response = await axios.get(`/api/leagues/${leagueId}/ranking`, {
+      params: { matchDay },
+    });
+    console.log('Ranking data received:', response.data);
+    return response.data;
+  }
+);
 
-// Création du slice avec les reducers et les actions
+export const fetchLeagueDetails = createAsyncThunk(
+  'league/fetchLeagueDetails',
+  async (leagueId: string) => {
+    const response = await axios.get(`/api/leagues/${leagueId}`);
+    return response.data;
+  }
+);
+
+export const updateRankings = createAsyncThunk(
+  'league/updateRankings',
+  async ({ leagueId, scores }: { leagueId: string, scores: any[] }) => {
+    const response = await axios.post(`/api/leagues/${leagueId}/team-rank`, { leagueId, scores });
+    return response.data;
+  }
+);
+
 const leagueSlice = createSlice({
   name: 'league',
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(fetchLeagueRanking.pending, (state) => {
+        console.log("fetchLeagueRanking pending");
+        state.loading = true;
+      })
+      .addCase(fetchLeagueRanking.fulfilled, (state, action) => {
+        console.log("fetchLeagueRanking fulfilled", action.payload);
+        state.ranking = action.payload;
+        state.loading = false;
+      })
+      .addCase(fetchLeagueRanking.rejected, (state, action) => {
+        console.log("fetchLeagueRanking rejected", action.error);
+        state.error = action.error.message || 'Fail to fecth LeagueStands';
+        state.loading = false;
+      })
+      .addCase(updateRankings.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateRankings.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateRankings.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Fail to update rankings';
+      })
+      .addCase(fetchLeagueDetails.fulfilled, (state, action) => {
+        const leagueIndex = state.leagues.findIndex(league => league.id === action.payload.id);
+        if (leagueIndex !== -1) {
+          state.leagues[leagueIndex] = action.payload;
+        } else {
+          state.leagues.push(action.payload);
+        }
+      })
       .addCase(createLeague.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -131,4 +189,5 @@ const leagueSlice = createSlice({
 });
 
 export default leagueSlice.reducer;
+
 

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { leagues as predefinedLeagues } from '../constants/leagues';
-import { getFromLocalStorage, saveToLocalStorage } from '../../../storageUtil';
+import { getFromLocalStorage } from '../../../storageUtil';
 import { RootState, AppDispatch } from '../store';
-import { seeLeague } from '../slices/leagueSlice';
+import { seeLeague, fetchLeagueRanking, fetchLeagueDetails, updateRankings } from '../slices/leagueSlice';
+import { Player } from '../slices/footballSlice';
+import { TeamData } from '../slices/teamSlice';
 
 const LeagueManager: React.FC = () => {
   const [name, setName] = useState('');
@@ -16,14 +18,66 @@ const LeagueManager: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [messageJoin, setMessageJoin] = useState<string | null>(null);
   const [leagueCode, setLeagueCode] = useState<string>('');
+  const [currentMatchDay, setCurrentMatchDay] = useState(1);
   const [myLeagues, setMyLeagues] = useState<any[]>([]); 
   const [allLeagues, setAllLeagues] = useState<any[]>([]);
   const [filteredLeagues, setFilteredLeagues] = useState<any[]>([]);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
+  const [selectedMatchDay, setSelectedMatchDay] = useState<number | undefined>(undefined);
   const userId = Number(getFromLocalStorage('userId')); 
   const dispatch = useDispatch<AppDispatch>();
-  const { leagues, loading, error } = useSelector((state: RootState) => state.league);
+  const leagueDetails = useSelector((state: RootState) => state.league.currentLeague);
+  const { leagues, ranking, loading, error } = useSelector((state: RootState) => state.league);
+  const allPlayers = useSelector((state: RootState) => state.football.players);
+  const { teams } = useSelector((state: RootState) => state.team);
 
+  function calculatePlayerScore(player: Player, matchDay: number): number {
+    let score = 3; // Score de base
+  
+    const stats = player.current_season_stats?.[`match_${matchDay}`];
+    if (!stats) return score;
+  
+    switch (player.position) {
+      case 'Goalkeeper':
+        score += stats.saves * 0.1;
+        score -= stats.goals_conceded;
+        break;
+      case 'Defender':
+        if (stats.duels_won_percentage >= 50) score += 1;
+        // Supposons que nous avons une statistique pour les fautes
+        const fouls = stats.fouls || 0;
+        if (fouls === 0) score += 1;
+        else score -= fouls * 0.3;
+        break;
+      case 'Midfielder':
+        if (stats.duels_won_percentage >= 50) score += 1;
+        // Supposons que nous avons une statistique pour les dribbles réussis
+        if (stats.successful_dribbles_percentage >= 50) score += 1;
+        score += stats.chances_created * 0.3;
+        break;
+      case 'Forward':
+        score += stats.goals * 0.8;
+        score += stats.shots_on_target * 0.2;
+        score -= stats.shots_off_target * 0.3;
+        break;
+    }
+  
+    score -= (stats.yellow_cards || 0) * 1;
+    score -= (stats.red_cards || 0) * 3;
+  
+    return Math.max(score, 0); 
+  }
 
+  function calculateTeamScore(team: TeamData, matchDay: number): number {
+    return [team.gk, team.def, team.mid, team.forward1, team.forward2]
+      .map(playerId => {
+        const player = allPlayers.find(p => p.id === Number(playerId));
+        return player ? calculatePlayerScore(player, matchDay) : 0;
+      })
+      .reduce((sum, score) => sum + score, 0);
+  }
+  
+  
   useEffect(() => {
       fetchLeagues();
   }, [userId]);
@@ -31,6 +85,25 @@ const LeagueManager: React.FC = () => {
   useEffect(() => {
     filterLeagues();
   }, [viewChampionship, allLeagues]);
+
+  useEffect(() => {
+    if (selectedLeagueId) {
+      dispatch(fetchLeagueDetails(selectedLeagueId));
+    }
+  }, [selectedLeagueId, dispatch]);
+
+  useEffect(() => {
+    if (userId) {
+      dispatch(seeLeague(userId));
+    }
+  }, [userId, dispatch]);
+
+  useEffect(() => {
+    if (selectedLeagueId) {
+      dispatch(fetchLeagueRanking({ leagueId: selectedLeagueId, matchDay: selectedMatchDay }));
+      dispatch(fetchLeagueDetails(selectedLeagueId));
+    }
+  }, [dispatch, selectedLeagueId, selectedMatchDay]);
 
   const fetchLeagues = async () => {
     if (userId) {
@@ -128,6 +201,85 @@ const LeagueManager: React.FC = () => {
     console.log('Championship selected:', value);
     setViewChampionship(value === '' ? '' : Number(value));
   };
+  useEffect(() => {
+    if (viewChampionship === '') {
+      setFilteredLeagues(leagues);
+    } else {
+      const filtered = leagues.filter(league => 
+        league.championship_id === viewChampionship
+      );
+      setFilteredLeagues(filtered);
+    }
+  }, [viewChampionship, leagues]);
+
+
+  const handleLeagueSelect = (leagueId: string) => {
+    setSelectedLeagueId(leagueId);
+    setSelectedMatchDay(undefined); 
+  };
+
+
+  const handleUpdateRankings = async () => {
+    if (selectedLeagueId) {
+      try {
+        const leagueTeams = teams.filter(team => team.league_id === selectedLeagueId);
+
+        const scores = leagueTeams.map(team => ({
+          team_id: team.id!,
+          match_day: currentMatchDay,
+          score: calculateTeamScore(team, currentMatchDay)
+        }));
+
+        await dispatch(updateRankings({ leagueId: selectedLeagueId, scores }));
+        dispatch(fetchLeagueRanking({ leagueId: selectedLeagueId }));
+      } catch (error) {
+        console.error('Failed to update rankings:', error);
+      }
+    }
+  };
+
+  const renderRanking = () => {
+    if (!selectedLeagueId) return null;
+    const selectedLeague = leagues.find(l => l.id.toString() === selectedLeagueId);
+    if (!selectedLeague) return null;
+
+
+    return (
+      <div>
+        <h3>Ranking for {selectedLeague.name}</h3>
+        <select onChange={(e) => setSelectedMatchDay(Number(e.target.value) || undefined)}>
+          <option value="">Overall</option>
+          {Array.from({ length: selectedLeague.numMatchdays }, (_, i) => (   // ici
+            <option key={i + 1} value={i + 1}>Matchday {i + 1}</option>
+          ))}
+        </select>
+        {ranking.length > 0 ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Team</th>
+                <th>Points</th>
+                <th>{selectedMatchDay ? 'Score' : 'Total Score'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranking.map((team) => (
+                <tr key={team.id}>
+                  <td>{team.rank}</td>
+                  <td>{team.team_name}</td>
+                  <td>{team.points}</td>
+                  <td>{selectedMatchDay ? team.score.toFixed(2) : team.total_score.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>No ranking data available</p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -180,20 +332,29 @@ const LeagueManager: React.FC = () => {
           ))}
         </select>
         {filteredLeagues.length > 0 ? (
-          <select>
-            <option value="">Select a league</option>
-            {filteredLeagues.map((league) => (
-              <option key={league.id} value={league.id}>
-                {league.name} (Championship: {league.championship_id})
-              </option>
-            ))}
-          </select>
-        ) : (
-          <p>No leagues found for this championship</p>
-        )}
-      </div>
-    </>
-  );
+          <ul>
+          {filteredLeagues.map((league) => (
+            <li key={league.id}>
+              {league.name}
+              <button onClick={() => handleLeagueSelect(league.id.toString())}>View ranking</button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No leagues found for this championship</p>
+      )}
+        <select value={currentMatchDay} onChange={(e) => setCurrentMatchDay(Number(e.target.value))}>
+          {Array.from({ length: 20 }, (_, i) => i + 1).map(day => (
+            <option key={day} value={day}>Match Day {day}</option>
+          ))}
+        </select>
+      <button onClick={handleUpdateRankings} disabled={!selectedLeagueId}>
+        Update Rankings for Match Day {currentMatchDay}
+      </button>
+      {renderRanking()}
+    </div>
+  </>
+);
 };
 
 export default LeagueManager;

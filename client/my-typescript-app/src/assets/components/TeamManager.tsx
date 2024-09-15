@@ -57,7 +57,7 @@ const TeamManager: React.FC = () => {
           if (Array.isArray(response.data) && response.data.length > 0) {
             setLeagues(response.data.map(league => ({
               ...league,
-              num_matchdays: league.num_matchdays || 38 // Assurez-vous que num_matchdays est toujours défini
+              num_matchdays: league.num_matchdays || 20
             })));
             setLeagueId(response.data[0].id.toString());
           } else {
@@ -77,41 +77,6 @@ const TeamManager: React.FC = () => {
     setLeagueId(event.target.value);
   };
 
-  // const handleCreateTeam = async () => {
-  //   if (!leagueId) {
-  //     setMessage('Please select a league.');
-  //     return;
-  //   }
-  //   try {
-  //     const selectedLeague = leagues.find(league => league.id.toString() === leagueId);
-  //     if (!selectedLeague) {
-  //       setMessage('Invalid league selected.');
-  //       return;
-  //     }
-  //     const teamData = {
-  //       name,
-  //       league_id: leagueId,
-  //       user_id: userId,
-  //       championship_id: selectedLeague.championship_id,
-  //       match_day: 1,
-  //       gk: 0,
-  //       def: 0,
-  //       mid: 0,
-  //       forward1: 0,
-  //       forward2: 0
-  //     };
-  //     const resultAction = await dispatch(createTeam(teamData));
-  //     if (createTeam.fulfilled.match(resultAction)) {
-  //       setMessage(`Team ${name} created successfully!`);
-  //       dispatch(seeTeam(userId)); // Refresh the teams list
-  //     } else {
-  //       setMessage('Error during the team creation.');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error during the team creation:', error);
-  //     setMessage('Error during the team creation.');
-  //   }
-  // };
   
   const handleTeamAction = async () => {
 
@@ -155,22 +120,6 @@ const TeamManager: React.FC = () => {
     }
   };
 
-  // const handleTeamSelect = async (teamId: string) => {
-  //   try {
-  //     const response = await axios.get(`http://localhost:3000/api/teams/${teamId}`);
-  //     console.log('res:', response);
-  //     setSelectedTeam(response.data);
-  //     setMatchDay(response.data.match_day)
-  //     const leagueResponse = await axios.get(`http://localhost:3000/api/leagues/${response.data.league_id}`);
-  //     console.log('league res:', leagueResponse);
-      
-  //     setMaxMatchdays(leagueResponse.data.num_matchdays);
-  //     console.log(response.data);
-  //   } catch (error) {
-  //     console.error('Error fetching team details:', error);
-  //     setMessage('Error fetching team details.');
-  //   }
-  // };
 
   const handleTeamSelect = async (teamId: string) => {
     try {

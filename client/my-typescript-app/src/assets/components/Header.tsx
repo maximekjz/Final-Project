@@ -8,9 +8,6 @@ const Header: React.FC = () => {
       <Button component={Link} to="/">
         Home
       </Button>
-      <Button component={Link} to="/dash">
-        Dashboard
-      </Button>
       <Button component={Link} to="/league">
         My Leagues
       </Button>

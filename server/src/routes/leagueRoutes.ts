@@ -1,5 +1,5 @@
 import express from 'express';
-import { createLeague, getLeaguePlayers, joinLeague, showLeagues, getUserLeagues } from '../controllers/leagueController'; 
+import { createLeague, getLeaguePlayers, joinLeague, showLeagues, getUserLeagues, addRank, getLeague } from '../controllers/leagueController'; 
 
 const router = express.Router();
 
@@ -16,5 +16,7 @@ router.get('/:leaguesId/players', getLeaguePlayers);
 
 router.get('/user-leagues/:userId', getUserLeagues);
 
+router.post('/team-rank', addRank);
 
+router.get('/:leagueId', getLeague)
 export default router;
